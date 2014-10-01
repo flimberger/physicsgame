@@ -38,5 +38,5 @@ set(physgame_HDRS
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 
-add_executable(hello ${physgame_SRCS})
-target_link_libraries(hello ${physgame_LIBS})
+add_executable(physgame ${physgame_SRCS})
+target_link_libraries(physgame ${physgame_LIBS})
