@@ -48,6 +48,7 @@ static void CleanupOpenGL();
 static void LoadShaders(const std::string &vertexShaderFile, const std::string &fragmentShaderFile);
 static void CompileShader(GLuint shaderId, const std::string sourceFile);
 static void ProcessInputs();
+static void ShowStatus(double boxHeight, double fps);
 
 int
 main()
@@ -111,11 +112,13 @@ main()
 
     btTransform transformation;
 
+    double currentTime, lastTime = glfwGetTime();
+    double fps { 0.0 };
+    size_t nFrames { 0l };
+
     do {
         dynamicsWorld->stepSimulation(1 / 60.0f, 10);
-
         fallRigidBody->getMotionState()->getWorldTransform(transformation);
-        // std::cout << "Sphere height: " << transformation.getOrigin().getY() << std::endl;
 
         ProcessInputs();
         modelMatrix = glm::translate(glm::mat4 { 1.0f }, glm::vec3 {
@@ -160,6 +163,15 @@ main()
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
         glDisableVertexAttribArray(2);
+
+        currentTime = glfwGetTime();
+        ++nFrames;
+        if (currentTime - lastTime > 1.0) {
+            fps = 1000.0/nFrames;
+            nFrames = 0;
+            lastTime += 1.0;
+        }
+        ShowStatus(transformation.getOrigin().getY(), fps);
 
         glfwSwapBuffers(s_window);
         glfwPollEvents();
@@ -349,4 +361,22 @@ ProcessInputs()
         s_position += s_right * deltaTime * SPEED;
     if (glfwGetKey(s_window, GLFW_KEY_LEFT) == GLFW_PRESS)
         s_position -= s_right * deltaTime * SPEED;
+}
+
+static void
+ShowStatus(double boxHeight, double fps)
+{
+    static bool firstRun = true;
+
+    if (firstRun) {
+        firstRun = false;
+        goto draw;
+    }
+    std::cout << "\x1b[1F"; // one line up
+    std::cout << "\x1b[2K"; // erase line
+    std::cout << "\x1b[1F"; // one line up
+    std::cout << "\x1b[2K"; // erase line
+draw:
+    std::cout << "Box height: " << boxHeight << std::endl
+              << fps << " ms/Frame" << std::endl;
 }
