@@ -19,41 +19,42 @@
 #include <memory>
 #include <vector>
 
-static GLuint s_vertexArrayId;
-static GLuint s_vertexBufferId;
-static GLuint s_uvCoordBufferId;
-static GLuint s_normalBufferId;
-static GLuint s_textureId;
-static GLuint s_lightPositionId;
-static GLuint s_lightColorId;
-static GLuint s_lightPowerId;
-static GLuint s_uniformTextureId;
-static GLuint s_programId;
-static GLuint s_mvpMatrixId;
-static GLuint s_modelMatrixId;
-static GLuint s_viewMatrixId;
-static GLFWwindow *s_window;
-static Model s_model;
-static glm::vec3 s_position { 3, 1, 9 };
-static glm::vec3 s_direction;
-static glm::vec3 s_right;
-static glm::vec3 s_up;
-static float s_horizontalAngle { 3.14f };
-static float s_verticalAngle { 0.0f };
+static GLuint g_vertexArrayId;
+static GLuint g_vertexBufferId;
+static GLuint g_uvCoordBufferId;
+static GLuint g_normalBufferId;
+static GLuint g_elementBufferId;
+static GLuint g_textureId;
+static GLuint g_lightPositionId;
+static GLuint g_lightColorId;
+static GLuint g_lightPowerId;
+static GLuint g_uniformTextureId;
+static GLuint g_programId;
+static GLuint g_mvpMatrixId;
+static GLuint g_modelMatrixId;
+static GLuint g_viewMatrixId;
+static GLFWwindow *g_window;
+static Model g_model;
+static glm::vec3 g_position { 3, 1, 9 };
+static glm::vec3 g_direction;
+static glm::vec3 g_right;
+static glm::vec3 g_up;
+static float g_horizontalAngle { 3.14f };
+static float g_verticalAngle { 0.0f };
 static const float SPEED { 5.0f };
 static const float MOUSE_SPEED { 0.02f };
 
-static void SetupOpenGL();
-static void CleanupOpenGL();
-static void LoadShaders(const std::string &vertexShaderFile, const std::string &fragmentShaderFile);
-static void CompileShader(GLuint shaderId, const std::string sourceFile);
-static void ProcessInputs();
-static void ShowStatus(double boxHeight, double fps);
+static void setupOpenGL();
+static void cleanupOpenGL();
+static void loadShaders(const std::string &vertexShaderFile, const std::string &fragmentShaderFile);
+static void compileShader(GLuint shaderId, const std::string sourceFile);
+static void processInputs();
+static void showStatus(double boxHeight, double fps);
 
 int
 main()
 {
-    SetupOpenGL();
+    setupOpenGL();
 
     std::unique_ptr<btBroadphaseInterface> broadphase { new btDbvtBroadphase };
     std::unique_ptr<btDefaultCollisionConfiguration> collisionConfiguration {
@@ -120,45 +121,47 @@ main()
         dynamicsWorld->stepSimulation(1 / 60.0f, 10);
         fallRigidBody->getMotionState()->getWorldTransform(transformation);
 
-        ProcessInputs();
+        processInputs();
         modelMatrix = glm::translate(glm::mat4 { 1.0f }, glm::vec3 {
             transformation.getOrigin().getX(),
             transformation.getOrigin().getY(),
             transformation.getOrigin().getZ()
         });
         viewMatrix = glm::lookAt(
-            s_position,
-            s_position + s_direction,
-            s_up
+            g_position,
+            g_position + g_direction,
+            g_up
         );
         mvp = projectionMatrix * viewMatrix * modelMatrix;
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glUseProgram(s_programId);
-        glUniformMatrix4fv(s_mvpMatrixId, 1, GL_FALSE, &mvp[0][0]);
-        glUniformMatrix4fv(s_modelMatrixId, 1, GL_FALSE, &modelMatrix[0][0]);
-        glUniformMatrix4fv(s_viewMatrixId, 1, GL_FALSE, &viewMatrix[0][0]);
-        glUniform3f(s_lightPositionId, lightPosition.x, lightPosition.y, lightPosition.z);
-        glUniform3f(s_lightColorId, lightColor.x, lightColor.y, lightColor.z);
-        glUniform1f(s_lightPowerId, lightPower);
+        glUseProgram(g_programId);
+        glUniformMatrix4fv(g_mvpMatrixId, 1, GL_FALSE, &mvp[0][0]);
+        glUniformMatrix4fv(g_modelMatrixId, 1, GL_FALSE, &modelMatrix[0][0]);
+        glUniformMatrix4fv(g_viewMatrixId, 1, GL_FALSE, &viewMatrix[0][0]);
+        glUniform3f(g_lightPositionId, lightPosition.x, lightPosition.y, lightPosition.z);
+        glUniform3f(g_lightColorId, lightColor.x, lightColor.y, lightColor.z);
+        glUniform1f(g_lightPowerId, lightPower);
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, s_textureId);
-        glUniform1i(s_uniformTextureId, 0);
+        glBindTexture(GL_TEXTURE_2D, g_textureId);
+        glUniform1i(g_uniformTextureId, 0);
 
         glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, s_vertexBufferId);
+        glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferId);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
         glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, s_uvCoordBufferId);
+        glBindBuffer(GL_ARRAY_BUFFER, g_uvCoordBufferId);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
         glEnableVertexAttribArray(2);
-        glBindBuffer(GL_ARRAY_BUFFER, s_normalBufferId);
+        glBindBuffer(GL_ARRAY_BUFFER, g_normalBufferId);
         glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-        glDrawArrays(GL_TRIANGLES, 0, s_model.vertices().size());
+        glDrawArrays(GL_TRIANGLES, 0, g_model.vertices().size());
+        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_elementBufferId);
+        // glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, nullptr);
 
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
@@ -171,16 +174,16 @@ main()
             nFrames = 0;
             lastTime += 1.0;
         }
-        ShowStatus(transformation.getOrigin().getY(), fps);
+        showStatus(transformation.getOrigin().getY(), fps);
 
-        glfwSwapBuffers(s_window);
+        glfwSwapBuffers(g_window);
         glfwPollEvents();
-    } while (glfwGetKey(s_window, GLFW_KEY_ESCAPE) != GLFW_PRESS
-             && glfwGetKey(s_window, GLFW_KEY_Q) != GLFW_PRESS
-             && glfwWindowShouldClose(s_window) == 0);
+    } while (glfwGetKey(g_window, GLFW_KEY_ESCAPE) != GLFW_PRESS
+             && glfwGetKey(g_window, GLFW_KEY_Q) != GLFW_PRESS
+             && glfwWindowShouldClose(g_window) == 0);
     dynamicsWorld->removeRigidBody(fallRigidBody.get());
     dynamicsWorld->removeRigidBody(groundRigidBody.get());
-    CleanupOpenGL();
+    cleanupOpenGL();
 
     return 0;
 }
@@ -191,7 +194,7 @@ main()
  * Set up GLFW and GLEW, opens a window.
  */
 void
-SetupOpenGL()
+setupOpenGL()
 {
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW." << std::endl;
@@ -203,100 +206,107 @@ SetupOpenGL()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    s_window = glfwCreateWindow(1024, 768, "Bullet + OpenGL", nullptr, nullptr);
+    g_window = glfwCreateWindow(1024, 768, "Bullet + OpenGL", nullptr, nullptr);
 
-    if (s_window == nullptr) {
+    if (g_window == nullptr) {
         std::cerr << "Failed to open GLFW window." << std::endl;
         glfwTerminate();
         exit(1);
     }
-    glfwMakeContextCurrent(s_window);
+    glfwMakeContextCurrent(g_window);
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK) {
         std::cerr << "Failed to initialize GLEW." << std::endl;
         glfwTerminate();
         exit(1);
     }
-    glfwSetInputMode(s_window, GLFW_STICKY_KEYS, GL_TRUE);
-    glfwSetCursorPos(s_window, 1024/2, 768/2);
+    glfwSetInputMode(g_window, GLFW_STICKY_KEYS, GL_TRUE);
+    glfwSetCursorPos(g_window, 1024/2, 768/2);
 
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glEnable(GL_CULL_FACE);
 
-    glGenVertexArrays(1, &s_vertexArrayId);
-    glBindVertexArray(s_vertexArrayId);
+    glGenVertexArrays(1, &g_vertexArrayId);
+    glBindVertexArray(g_vertexArrayId);
 
-    s_model = LoadModelFromObjFile("../res/textures/cube.obj");
+    g_model = loadModelFromObjFile("../res/textures/cube.obj");
 
-    glGenBuffers(1, &s_vertexBufferId);
-    glBindBuffer(GL_ARRAY_BUFFER, s_vertexBufferId);
-    glBufferData(GL_ARRAY_BUFFER, s_model.vertices().size() * sizeof(glm::vec3),
-                  &s_model.vertices()[0], GL_STATIC_DRAW);
+    glGenBuffers(1, &g_vertexBufferId);
+    glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferId);
+    glBufferData(GL_ARRAY_BUFFER, g_model.vertices().size() * sizeof(glm::vec3),
+                  &g_model.vertices()[0], GL_STATIC_DRAW);
 
-    glGenBuffers(1, &s_uvCoordBufferId);
-    glBindBuffer(GL_ARRAY_BUFFER, s_uvCoordBufferId);
-    glBufferData(GL_ARRAY_BUFFER, s_model.uvCoords().size() * sizeof(glm::vec2),
-                 &s_model.uvCoords()[0], GL_STATIC_DRAW);
+    glGenBuffers(1, &g_uvCoordBufferId);
+    glBindBuffer(GL_ARRAY_BUFFER, g_uvCoordBufferId);
+    glBufferData(GL_ARRAY_BUFFER, g_model.uvCoords().size() * sizeof(glm::vec2),
+                 &g_model.uvCoords()[0], GL_STATIC_DRAW);
 
-    glGenBuffers(1, &s_normalBufferId);
-    glBindBuffer(GL_ARRAY_BUFFER, s_normalBufferId);
-    glBufferData(GL_ARRAY_BUFFER, s_model.normals().size() * sizeof(glm::vec3),
-                 &s_model.normals()[0], GL_STATIC_DRAW);
+    glGenBuffers(1, &g_normalBufferId);
+    glBindBuffer(GL_ARRAY_BUFFER, g_normalBufferId);
+    glBufferData(GL_ARRAY_BUFFER, g_model.normals().size() * sizeof(glm::vec3),
+                 &g_model.normals()[0], GL_STATIC_DRAW);
 
-    LoadShaders("../res/shaders/vertex.glsl", "../res/shaders/fragment.glsl");
-    s_mvpMatrixId = glGetUniformLocation(s_programId, "mvpMatrix");
-    s_modelMatrixId = glGetUniformLocation(s_programId, "modelMatris");
-    s_viewMatrixId = glGetUniformLocation(s_programId, "modelMatrix");
+    std::vector<unsigned short> indices;
 
-    s_textureId = LoadDDS("../res/textures/uvmap.DDS");
-    s_uniformTextureId = glGetUniformLocation(s_programId, "myTextureSampler");
+    glGenBuffers(1, &g_elementBufferId);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_elementBufferId);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0],
+                 GL_STATIC_DRAW);
 
-    glUseProgram(s_programId);
-    s_lightPositionId = glGetUniformLocation(s_programId, "lightPosition_worldspace");
-    s_lightColorId = glGetUniformLocation(s_programId, "lightColor");
-    s_lightPowerId = glGetUniformLocation(s_programId, "lightPower");
+    loadShaders("../res/shaders/vertex.glsl", "../res/shaders/fragment.glsl");
+    g_mvpMatrixId = glGetUniformLocation(g_programId, "mvpMatrix");
+    g_modelMatrixId = glGetUniformLocation(g_programId, "modelMatris");
+    g_viewMatrixId = glGetUniformLocation(g_programId, "modelMatrix");
+
+    g_textureId = loadDDS("../res/textures/uvmap.DDS");
+    g_uniformTextureId = glGetUniformLocation(g_programId, "myTextureSampler");
+
+    glUseProgram(g_programId);
+    g_lightPositionId = glGetUniformLocation(g_programId, "lightPosition_worldspace");
+    g_lightColorId = glGetUniformLocation(g_programId, "lightColor");
+    g_lightPowerId = glGetUniformLocation(g_programId, "lightPower");
 }
 
 static void
-CleanupOpenGL()
+cleanupOpenGL()
 {
-    glDeleteProgram(s_programId);
-    glDeleteBuffers(1, &s_normalBufferId);
-    glDeleteBuffers(1, &s_uvCoordBufferId);
-    glDeleteBuffers(1, &s_vertexBufferId);
-    glDeleteVertexArrays(1, &s_vertexArrayId);
+    glDeleteProgram(g_programId);
+    glDeleteBuffers(1, &g_normalBufferId);
+    glDeleteBuffers(1, &g_uvCoordBufferId);
+    glDeleteBuffers(1, &g_vertexBufferId);
+    glDeleteVertexArrays(1, &g_vertexArrayId);
     glfwTerminate();
 }
 
 static void
-LoadShaders(const std::string &vertexShaderFile, const std::string &fragmentShaderFile)
+loadShaders(const std::string &vertexShaderFile, const std::string &fragmentShaderFile)
 {
-    s_programId = glCreateProgram();
+    g_programId = glCreateProgram();
     GLuint vsId = glCreateShader(GL_VERTEX_SHADER);
     GLuint fsId = glCreateShader(GL_FRAGMENT_SHADER);
     GLint result = GL_FALSE;
     GLint infoLogLength;
 
-    CompileShader(vsId, vertexShaderFile);
-    CompileShader(fsId, fragmentShaderFile);
-    glAttachShader(s_programId, vsId);
-    glAttachShader(s_programId, fsId);
-    glLinkProgram(s_programId);
-    glGetProgramiv(s_programId, GL_LINK_STATUS, &result);
-    glGetProgramiv(s_programId, GL_INFO_LOG_LENGTH, &infoLogLength);
+    compileShader(vsId, vertexShaderFile);
+    compileShader(fsId, fragmentShaderFile);
+    glAttachShader(g_programId, vsId);
+    glAttachShader(g_programId, fsId);
+    glLinkProgram(g_programId);
+    glGetProgramiv(g_programId, GL_LINK_STATUS, &result);
+    glGetProgramiv(g_programId, GL_INFO_LOG_LENGTH, &infoLogLength);
 
     std::vector<char> infoLog(infoLogLength);
 
-    glGetProgramInfoLog(s_programId, infoLogLength, nullptr, &infoLog[0]);
+    glGetProgramInfoLog(g_programId, infoLogLength, nullptr, &infoLog[0]);
     std::cerr << &infoLog[0] << std::endl;
     glDeleteShader(vsId);
     glDeleteShader(fsId);
 }
 
 static void
-CompileShader(GLuint shaderId, const std::string sourceFile)
+compileShader(GLuint shaderId, const std::string sourceFile)
 {
     std::string shaderSrc;
     std::ifstream file { sourceFile };
@@ -327,7 +337,7 @@ CompileShader(GLuint shaderId, const std::string sourceFile)
 }
 
 static void
-ProcessInputs()
+processInputs()
 {
     static double lastTime = glfwGetTime();
     double now = glfwGetTime();
@@ -335,36 +345,36 @@ ProcessInputs()
     double xPos, yPos;
 
     lastTime = now;
-    glfwGetCursorPos(s_window, &xPos, &yPos);
+    glfwGetCursorPos(g_window, &xPos, &yPos);
     // TODO: glfwGetWindowSize
-    glfwSetCursorPos(s_window, 1024/2, 768/2);
-    s_horizontalAngle += MOUSE_SPEED * deltaTime * float(1024/2 - xPos);
-    s_verticalAngle += MOUSE_SPEED * deltaTime * float(768/2 - yPos);
+    glfwSetCursorPos(g_window, 1024/2, 768/2);
+    g_horizontalAngle += MOUSE_SPEED * deltaTime * float(1024/2 - xPos);
+    g_verticalAngle += MOUSE_SPEED * deltaTime * float(768/2 - yPos);
 
-    s_direction = {
-        cos(s_verticalAngle) * sin(s_horizontalAngle),
-        sin(s_verticalAngle),
-        cos(s_verticalAngle) * cos(s_horizontalAngle)
+    g_direction = {
+        cos(g_verticalAngle) * sin(g_horizontalAngle),
+        sin(g_verticalAngle),
+        cos(g_verticalAngle) * cos(g_horizontalAngle)
     };
-    s_right = {
-        sin(s_horizontalAngle - M_PI/2),
+    g_right = {
+        sin(g_horizontalAngle - M_PI/2),
         0,
-        cos(s_horizontalAngle - M_PI/2)
+        cos(g_horizontalAngle - M_PI/2)
     };
-    s_up = glm::cross(s_right, s_direction);
+    g_up = glm::cross(g_right, g_direction);
 
-    if (glfwGetKey(s_window, GLFW_KEY_UP) == GLFW_PRESS)
-        s_position += s_direction * deltaTime * SPEED;
-    if (glfwGetKey(s_window, GLFW_KEY_DOWN) == GLFW_PRESS)
-        s_position -= s_direction * deltaTime * SPEED;
-    if (glfwGetKey(s_window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-        s_position += s_right * deltaTime * SPEED;
-    if (glfwGetKey(s_window, GLFW_KEY_LEFT) == GLFW_PRESS)
-        s_position -= s_right * deltaTime * SPEED;
+    if (glfwGetKey(g_window, GLFW_KEY_UP) == GLFW_PRESS)
+        g_position += g_direction * deltaTime * SPEED;
+    if (glfwGetKey(g_window, GLFW_KEY_DOWN) == GLFW_PRESS)
+        g_position -= g_direction * deltaTime * SPEED;
+    if (glfwGetKey(g_window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+        g_position += g_right * deltaTime * SPEED;
+    if (glfwGetKey(g_window, GLFW_KEY_LEFT) == GLFW_PRESS)
+        g_position -= g_right * deltaTime * SPEED;
 }
 
 static void
-ShowStatus(double boxHeight, double fps)
+showStatus(double boxHeight, double fps)
 {
     static bool firstRun = true;
 

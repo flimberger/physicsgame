@@ -11,7 +11,7 @@ static const uint32_t FOURCC_DXT3 = 0x33545844;
 static const uint32_t FOURCC_DXT5 = 0x35545844;
 
 GLuint
-LoadDDS(const std::string &path)
+loadDDS(const std::string &path)
 {
     uint8_t header[124];
     FILE *fp = fopen(path.c_str(), "rb");

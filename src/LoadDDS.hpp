@@ -4,4 +4,4 @@
 
 #include <string>
 
-GLuint LoadDDS(const std::string &path);
+GLuint loadDDS(const std::string &path);

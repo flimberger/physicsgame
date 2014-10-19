@@ -9,11 +9,11 @@ static const size_t FACE_VERTEX { 0 };
 static const size_t FACE_UV_COORD { 1 };
 static const size_t FACE_NORMAL { 2 };
 
-static bool ParseTriplet(std::ifstream &file, std::vector<unsigned int> &vec);
-static bool ParseFace(std::ifstream &file, std::vector<std::vector<unsigned int>> &faceIndices);
+static bool parseTriplet(std::ifstream &file, std::vector<unsigned int> &vec);
+static bool parseFace(std::ifstream &file, std::vector<std::vector<unsigned int>> &faceIndices);
 
 Model
-LoadModelFromObjFile(const std::string &path)
+loadModelFromObjFile(const std::string &path)
 {
     std::vector<unsigned int> vertexIdx, uvIdx, normalIdx;
     std::vector<glm::vec3> modelVertices, modelNormals, tmpVertices, tmpNormals;
@@ -48,7 +48,7 @@ LoadModelFromObjFile(const std::string &path)
             } else if (strbuf == "f") {
                 std::vector<std::vector<unsigned int>> faceIndices { 3 };
 
-                if (!ParseFace(file, faceIndices)) {
+                if (!parseFace(file, faceIndices)) {
                     std::cerr << "Error: Failed to parse face." << std::endl;
                     exit(1);
                 }
@@ -81,7 +81,7 @@ LoadModelFromObjFile(const std::string &path)
 }
 
 static bool
-ParseTriplet(std::ifstream &file, std::vector<unsigned int> &vec)
+parseTriplet(std::ifstream &file, std::vector<unsigned int> &vec)
 {
     unsigned int num;
     char slash;
@@ -103,13 +103,13 @@ ParseTriplet(std::ifstream &file, std::vector<unsigned int> &vec)
 }
 
 static bool
-ParseFace(std::ifstream &file, std::vector<std::vector<unsigned int>> &faceIndices)
+parseFace(std::ifstream &file, std::vector<std::vector<unsigned int>> &faceIndices)
 {
     // 3 components -> 3 iterations
     for (size_t i = 0; i < 3; ++i) {
         std::vector<unsigned int> vec;
 
-        if (!ParseTriplet(file, vec))
+        if (!parseTriplet(file, vec))
             return false;
         faceIndices[FACE_VERTEX].push_back(vec[FACE_VERTEX]);
         faceIndices[FACE_UV_COORD].push_back(vec[FACE_UV_COORD]);

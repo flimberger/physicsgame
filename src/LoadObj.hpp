@@ -3,10 +3,11 @@
 
 #include <glm/glm.hpp>
 
+#include <string>
 #include <vector>
 
 class Model;
 
-Model LoadModelFromObjFile(const std::string &path);
+Model loadModelFromObjFile(const std::string &path);
 
 #endif // PHYSICSGAMES_HELLO_OBJLOADER_H_
