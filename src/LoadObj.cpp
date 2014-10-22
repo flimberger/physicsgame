@@ -5,17 +5,24 @@
 #include <fstream>
 #include <iostream>
 
-static const size_t FACE_VERTEX { 0 };
-static const size_t FACE_UV_COORD { 1 };
-static const size_t FACE_NORMAL { 2 };
+struct IndexTriplet
+{
+    unsigned int vertexIndex;
+    unsigned int uvIndex;
+    unsigned int normalIndex;
+};
 
-static bool parseTriplet(std::ifstream &file, std::vector<unsigned int> &vec);
-static bool parseFace(std::ifstream &file, std::vector<std::vector<unsigned int>> &faceIndices);
+static bool operator==(const IndexTriplet &left, const IndexTriplet &right);
+
+static bool parseTriplet(std::ifstream &file, IndexTriplet &indexTriplet);
+static bool parseFace(std::ifstream &file, std::vector<size_t> &faceIndices,
+                      std::vector<IndexTriplet> &faceTriplets);
 
 Model
 loadModelFromObjFile(const std::string &path)
 {
-    std::vector<unsigned int> vertexIdx, uvIdx, normalIdx;
+    std::vector<IndexTriplet> faceTriplets;
+    std::vector<size_t> faceIndices;
     std::vector<glm::vec3> modelVertices, modelNormals, tmpVertices, tmpNormals;
     std::vector<glm::vec2> modelUVs, tmpUVs;
     std::ifstream file { path };
@@ -46,74 +53,72 @@ loadModelFromObjFile(const std::string &path)
                 file >> normal.z;
                 tmpNormals.push_back(normal);
             } else if (strbuf == "f") {
-                std::vector<std::vector<unsigned int>> faceIndices { 3 };
-
-                if (!parseFace(file, faceIndices)) {
+                if (!parseFace(file, faceIndices, faceTriplets)) {
                     std::cerr << "Error: Failed to parse face." << std::endl;
                     exit(1);
-                }
-                for (size_t i = 0; i < 3; ++i) {
-                    vertexIdx.push_back(faceIndices[FACE_VERTEX][i]);
-                    uvIdx.push_back(faceIndices[FACE_UV_COORD][i]);
-                    normalIdx.push_back(faceIndices[FACE_NORMAL][i]);
                 }
             }
         }
     }
-    for (auto i : vertexIdx) {
-        glm::vec3 vertex = tmpVertices[i - 1];
-        modelVertices.push_back(vertex);
-    }
-    for (auto i : uvIdx) {
-        glm::vec2 uv = tmpUVs[i - 1];
-        modelUVs.push_back(uv);
-    }
-    for (auto i : normalIdx) {
-        glm::vec3 normal = tmpNormals[i - 1];
-        modelNormals.push_back(normal);
+
+    for (auto &t : faceTriplets) {
+        modelVertices.push_back(tmpVertices[t.vertexIndex - 1]);
+        modelUVs.push_back(tmpUVs[t.uvIndex - 1]);
+        modelNormals.push_back(tmpNormals[t.normalIndex - 1]);
     }
 
     for (auto vec : modelVertices) {
         std::clog << vec.x << ", " << vec.y << ", " << vec.z << std::endl;
     }
 
-    return Model{modelVertices, modelUVs, modelNormals};
+    return Model { faceIndices, modelVertices, modelUVs, modelNormals };
+}
+
+static bool operator==(const IndexTriplet &left, const IndexTriplet &right)
+{
+    return (left.vertexIndex == right.vertexIndex)
+        && (left.uvIndex == right.uvIndex)
+        && (left.normalIndex == right.normalIndex);
 }
 
 static bool
-parseTriplet(std::ifstream &file, std::vector<unsigned int> &vec)
+parseTriplet(std::ifstream &file, IndexTriplet &indexTriplet)
 {
-    unsigned int num;
     char slash;
 
-    file >> num;
+    file >> indexTriplet.vertexIndex;
     file >> slash;
     if (slash != '/')
         return false;
-    vec.push_back(num);
-    file >> num;
+    file >> indexTriplet.uvIndex;
     file >> slash;
     if (slash != '/')
         return false;
-    vec.push_back(num);
-    file >> num;
-    vec.push_back(num);
+    file >> indexTriplet.normalIndex;
 
     return true;
 }
 
 static bool
-parseFace(std::ifstream &file, std::vector<std::vector<unsigned int>> &faceIndices)
+parseFace(std::ifstream &file, std::vector<size_t> &faceIndices,
+          std::vector<IndexTriplet> &faceTriplets)
 {
     // 3 components -> 3 iterations
     for (size_t i = 0; i < 3; ++i) {
-        std::vector<unsigned int> vec;
+        IndexTriplet triplet;
 
-        if (!parseTriplet(file, vec))
+        if (!parseTriplet(file, triplet))
             return false;
-        faceIndices[FACE_VERTEX].push_back(vec[FACE_VERTEX]);
-        faceIndices[FACE_UV_COORD].push_back(vec[FACE_UV_COORD]);
-        faceIndices[FACE_NORMAL].push_back(vec[FACE_NORMAL]);
+
+        size_t faceIndex = 0;
+        for (; faceIndex < faceTriplets.size(); ++faceIndex) {
+            if (triplet == faceTriplets[faceIndex]) {
+                goto push_index;
+            }
+        }
+        faceTriplets.push_back(triplet);
+push_index:
+        faceIndices.push_back(faceIndex);
     }
 
     return true;
