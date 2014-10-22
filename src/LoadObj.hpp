@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
-class Model;
+class Mesh;
 
-Model loadModelFromObjFile(const std::string &path);
+Mesh loadModelFromObjFile(const std::string &path);
 
 #endif // PHYSICSGAMES_HELLO_OBJLOADER_H_

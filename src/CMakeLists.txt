@@ -26,13 +26,13 @@ set(physgame_LIBS
 set(physgame_SRCS
     physgame.cpp
     LoadDDS.cpp
-    Model.cpp
+    Mesh.cpp
     LoadObj.cpp
 )
 
 set(physgame_HDRS
     LoadDDS.hpp
-    Model.hpp
+    Mesh.hpp
     LoadObj.hpp
 )
 

@@ -1,10 +1,8 @@
-#include "Model.hpp"
+#include "Mesh.hpp"
 #include "LoadDDS.hpp"
 #include "LoadObj.hpp"
 
 #include <btBulletDynamicsCommon.h>
-
-#include <GL/glew.h>
 
 #include <GLFW/glfw3.h>
 
@@ -20,9 +18,6 @@
 #include <vector>
 
 static GLuint g_vertexArrayId;
-static GLuint g_vertexBufferId;
-static GLuint g_uvCoordBufferId;
-static GLuint g_normalBufferId;
 static GLuint g_elementBufferId;
 static GLuint g_textureId;
 static GLuint g_lightPositionId;
@@ -34,7 +29,7 @@ static GLuint g_mvpMatrixId;
 static GLuint g_modelMatrixId;
 static GLuint g_viewMatrixId;
 static GLFWwindow *g_window;
-static Model g_model;
+static Mesh g_model;
 static glm::vec3 g_position { 3, 1, 9 };
 static glm::vec3 g_direction;
 static glm::vec3 g_right;
@@ -147,25 +142,13 @@ main()
         glBindTexture(GL_TEXTURE_2D, g_textureId);
         glUniform1i(g_uniformTextureId, 0);
 
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferId);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, g_uvCoordBufferId);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-        glEnableVertexAttribArray(2);
-        glBindBuffer(GL_ARRAY_BUFFER, g_normalBufferId);
-        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+        g_model.beginDraw();
 
         glDrawArrays(GL_TRIANGLES, 0, g_model.vertices().size());
         // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_elementBufferId);
         // glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, nullptr);
 
-        glDisableVertexAttribArray(0);
-        glDisableVertexAttribArray(1);
-        glDisableVertexAttribArray(2);
+        g_model.endDraw();
 
         currentTime = glfwGetTime();
         ++nFrames;
@@ -233,20 +216,7 @@ setupOpenGL()
 
     g_model = loadModelFromObjFile("../res/textures/cube.obj");
 
-    glGenBuffers(1, &g_vertexBufferId);
-    glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferId);
-    glBufferData(GL_ARRAY_BUFFER, g_model.vertices().size() * sizeof(glm::vec3),
-                  &g_model.vertices()[0], GL_STATIC_DRAW);
-
-    glGenBuffers(1, &g_uvCoordBufferId);
-    glBindBuffer(GL_ARRAY_BUFFER, g_uvCoordBufferId);
-    glBufferData(GL_ARRAY_BUFFER, g_model.uvCoords().size() * sizeof(glm::vec2),
-                 &g_model.uvCoords()[0], GL_STATIC_DRAW);
-
-    glGenBuffers(1, &g_normalBufferId);
-    glBindBuffer(GL_ARRAY_BUFFER, g_normalBufferId);
-    glBufferData(GL_ARRAY_BUFFER, g_model.normals().size() * sizeof(glm::vec3),
-                 &g_model.normals()[0], GL_STATIC_DRAW);
+    g_model.setup();
 
     std::vector<unsigned short> indices;
 
@@ -273,9 +243,6 @@ static void
 cleanupOpenGL()
 {
     glDeleteProgram(g_programId);
-    glDeleteBuffers(1, &g_normalBufferId);
-    glDeleteBuffers(1, &g_uvCoordBufferId);
-    glDeleteBuffers(1, &g_vertexBufferId);
     glDeleteVertexArrays(1, &g_vertexArrayId);
     glfwTerminate();
 }

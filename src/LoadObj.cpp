@@ -1,6 +1,6 @@
 #include "LoadObj.hpp"
 
-#include "Model.hpp"
+#include "Mesh.hpp"
 
 #include <fstream>
 #include <iostream>
@@ -12,7 +12,7 @@ static const size_t FACE_NORMAL { 2 };
 static bool parseTriplet(std::ifstream &file, std::vector<unsigned int> &vec);
 static bool parseFace(std::ifstream &file, std::vector<std::vector<unsigned int>> &faceIndices);
 
-Model
+Mesh
 loadModelFromObjFile(const std::string &path)
 {
     std::vector<unsigned int> vertexIdx, uvIdx, normalIdx;
@@ -77,7 +77,7 @@ loadModelFromObjFile(const std::string &path)
         std::clog << vec.x << ", " << vec.y << ", " << vec.z << std::endl;
     }
 
-    return Model{modelVertices, modelUVs, modelNormals};
+    return Mesh { modelVertices, modelUVs, modelNormals };
 }
 
 static bool
