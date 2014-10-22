@@ -142,13 +142,7 @@ main()
         glBindTexture(GL_TEXTURE_2D, g_textureId);
         glUniform1i(g_uniformTextureId, 0);
 
-        g_model.beginDraw();
-
-        glDrawArrays(GL_TRIANGLES, 0, g_model.vertices().size());
-        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_elementBufferId);
-        // glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, nullptr);
-
-        g_model.endDraw();
+        g_model.draw();
 
         currentTime = glfwGetTime();
         ++nFrames;

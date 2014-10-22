@@ -54,7 +54,7 @@ void Mesh::setup()
     m_active = true;
 }
 
-void Mesh::beginDraw()
+void Mesh::draw()
 {
     if (!m_active) {
         std::cerr << std::endl << "warning, attempted to draw inactive mesh" << std::endl;
@@ -72,13 +72,8 @@ void Mesh::beginDraw()
     glEnableVertexAttribArray(2);
     glBindBuffer(GL_ARRAY_BUFFER, m_nbo);
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-}
 
-void Mesh::endDraw()
-{
-    if (!m_active) {
-        return;
-    }
+    glDrawArrays(GL_TRIANGLES, 0, m_vertices.size());
 
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);

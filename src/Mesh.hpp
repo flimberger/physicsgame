@@ -22,8 +22,7 @@ public:
     //! Prepare for use, i.e. prepare OpenGL stuff
     void setup();
 
-    void beginDraw();
-    void endDraw();
+    void draw();
 
 private:
     void teardown();
