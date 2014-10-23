@@ -1,4 +1,5 @@
 #include "Mesh.hpp"
+#include "PhysicsObject.hpp"
 #include "LoadDDS.hpp"
 #include "LoadObj.hpp"
 
@@ -29,7 +30,7 @@ static GLuint g_mvpMatrixId;
 static GLuint g_modelMatrixId;
 static GLuint g_viewMatrixId;
 static GLFWwindow *g_window;
-static Mesh g_model;
+static PhysicsObject g_model;
 static glm::vec3 g_position { 3, 1, 9 };
 static glm::vec3 g_direction;
 static glm::vec3 g_right;
@@ -208,9 +209,11 @@ setupOpenGL()
     glGenVertexArrays(1, &g_vertexArrayId);
     glBindVertexArray(g_vertexArrayId);
 
-    g_model = loadModelFromObjFile("../res/textures/cube.obj");
+    auto mesh = std::make_shared<Mesh>();
 
-    g_model.setup();
+    *mesh = loadModelFromObjFile("../res/textures/cube.obj");
+    mesh->setup();
+    g_model.setMesh(mesh);
 
     std::vector<unsigned short> indices;
 

@@ -28,12 +28,14 @@ set(physgame_SRCS
     LoadDDS.cpp
     Mesh.cpp
     LoadObj.cpp
+    PhysicsObject.cpp
 )
 
 set(physgame_HDRS
     LoadDDS.hpp
     Mesh.hpp
     LoadObj.hpp
+    PhysicsObject.hpp
 )
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
