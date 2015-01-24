@@ -36,14 +36,14 @@ static GLuint g_uvCoordBufferId;
 static GLuint g_normalBufferId;
 static GLuint g_elementBufferId;
 static GLuint g_textureId;
-static GLuint g_lightPositionId;
-static GLuint g_lightColorId;
-static GLuint g_lightPowerId;
-static GLuint g_uniformTextureId;
+static GLint g_lightPositionId;
+static GLint g_lightColorId;
+static GLint g_lightPowerId;
+static GLint g_uniformTextureId;
 static GLuint g_programId;
-static GLuint g_mvpMatrixId;
-static GLuint g_modelMatrixId;
-static GLuint g_viewMatrixId;
+static GLint g_mvpMatrixId;
+static GLint g_modelMatrixId;
+static GLint g_viewMatrixId;
 static GLFWwindow *g_window;
 static Model g_model;
 static glm::vec3 g_position{3, 1, 9};
@@ -302,7 +302,8 @@ static void LoadShaders(const std::string &vertexShaderFile,
     glGetProgramiv(g_programId, GL_LINK_STATUS, &result);
     glGetProgramiv(g_programId, GL_INFO_LOG_LENGTH, &infoLogLength);
 
-    std::vector<char> infoLog(infoLogLength);
+    std::vector<char> infoLog(
+        static_cast<std::vector<char>::size_type>(infoLogLength));
 
     glGetProgramInfoLog(g_programId, infoLogLength, nullptr, &infoLog[0]);
     std::cerr << &infoLog[0] << std::endl;
@@ -335,7 +336,8 @@ static void CompileShader(GLuint shaderId, const std::string sourceFile)
     glGetShaderiv(shaderId, GL_COMPILE_STATUS, &result);
     glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &infoLogLength);
 
-    std::vector<char> infoLog(infoLogLength);
+    std::vector<char> infoLog(
+        static_cast<std::vector<char>::size_type>(infoLogLength));
 
     glGetShaderInfoLog(shaderId, infoLogLength, nullptr, &infoLog[0]);
     std::cerr << &infoLog[0] << std::endl;
