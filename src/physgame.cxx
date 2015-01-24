@@ -24,11 +24,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-#include <cstdlib>
 #include <iostream>
 #include <fstream>
-#include <memory>
-#include <vector>
 
 namespace
 {
@@ -416,13 +413,10 @@ static void ShowStatus(double boxHeight, double fps)
 
     if (firstRun) {
         firstRun = false;
-        goto draw;
+    } else {
+        std::cout << "\x1b[2A"; // two lines up
+        std::cout << "\x1b[J"; // erase line
     }
-    std::cout << "\x1b[1F"; // one line up
-    std::cout << "\x1b[2K"; // erase line
-    std::cout << "\x1b[1F"; // one line up
-    std::cout << "\x1b[2K"; // erase line
-draw:
     std::cout << "Box height: " << boxHeight << std::endl << fps << " ms/Frame"
               << std::endl;
 }
