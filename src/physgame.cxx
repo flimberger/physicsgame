@@ -55,17 +55,17 @@ static float g_verticalAngle { 0.0f };
 static const float SPEED { 5.0f };
 static const float MOUSE_SPEED { 0.02f };
 
-static void setupOpenGL();
-static void cleanupOpenGL();
-static void loadShaders(const std::string &vertexShaderFile, const std::string &fragmentShaderFile);
-static void compileShader(GLuint shaderId, const std::string sourceFile);
-static void processInputs();
-static void showStatus(double boxHeight, double fps);
+static void SetupOpenGL();
+static void CleanupOpenGL();
+static void LoadShaders(const std::string &vertexShaderFile, const std::string &fragmentShaderFile);
+static void CompileShader(GLuint shaderId, const std::string sourceFile);
+static void ProcessInputs();
+static void ShowStatus(double boxHeight, double fps);
 
 int
 main()
 {
-    setupOpenGL();
+    SetupOpenGL();
 
     std::unique_ptr<btBroadphaseInterface> broadphase { new btDbvtBroadphase };
     std::unique_ptr<btDefaultCollisionConfiguration> collisionConfiguration {
@@ -132,7 +132,7 @@ main()
         dynamicsWorld->stepSimulation(1 / 60.0f, 10);
         fallRigidBody->getMotionState()->getWorldTransform(transformation);
 
-        processInputs();
+        ProcessInputs();
         modelMatrix = glm::translate(glm::mat4 { 1.0f }, glm::vec3 {
             transformation.getOrigin().getX(),
             transformation.getOrigin().getY(),
@@ -170,7 +170,7 @@ main()
         glBindBuffer(GL_ARRAY_BUFFER, g_normalBufferId);
         glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-        glDrawArrays(GL_TRIANGLES, 0, g_model.vertices().size());
+        glDrawArrays(GL_TRIANGLES, 0, g_model.GetVertices().size());
         // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_elementBufferId);
         // glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, nullptr);
 
@@ -185,7 +185,7 @@ main()
             nFrames = 0;
             lastTime += 1.0;
         }
-        showStatus(transformation.getOrigin().getY(), fps);
+        ShowStatus(transformation.getOrigin().getY(), fps);
 
         glfwSwapBuffers(g_window);
         glfwPollEvents();
@@ -194,7 +194,7 @@ main()
              && glfwWindowShouldClose(g_window) == 0);
     dynamicsWorld->removeRigidBody(fallRigidBody.get());
     dynamicsWorld->removeRigidBody(groundRigidBody.get());
-    cleanupOpenGL();
+    CleanupOpenGL();
 
     return 0;
 }
@@ -205,7 +205,7 @@ main()
  * Set up GLFW and GLEW, opens a window.
  */
 void
-setupOpenGL()
+SetupOpenGL()
 {
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW." << std::endl;
@@ -242,22 +242,22 @@ setupOpenGL()
     glGenVertexArrays(1, &g_vertexArrayId);
     glBindVertexArray(g_vertexArrayId);
 
-    g_model = loadModelFromObjFile("../res/textures/cube.obj");
+    g_model = LoadModelFromObjFile("../res/textures/cube.obj");
 
     glGenBuffers(1, &g_vertexBufferId);
     glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferId);
-    glBufferData(GL_ARRAY_BUFFER, g_model.vertices().size() * sizeof(glm::vec3),
-                  &g_model.vertices()[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, g_model.GetVertices().size() * sizeof(glm::vec3),
+                  &g_model.GetVertices()[0], GL_STATIC_DRAW);
 
     glGenBuffers(1, &g_uvCoordBufferId);
     glBindBuffer(GL_ARRAY_BUFFER, g_uvCoordBufferId);
-    glBufferData(GL_ARRAY_BUFFER, g_model.uvCoords().size() * sizeof(glm::vec2),
-                 &g_model.uvCoords()[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, g_model.GetUvCoords().size() * sizeof(glm::vec2),
+                 &g_model.GetUvCoords()[0], GL_STATIC_DRAW);
 
     glGenBuffers(1, &g_normalBufferId);
     glBindBuffer(GL_ARRAY_BUFFER, g_normalBufferId);
-    glBufferData(GL_ARRAY_BUFFER, g_model.normals().size() * sizeof(glm::vec3),
-                 &g_model.normals()[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, g_model.GetNormals().size() * sizeof(glm::vec3),
+                 &g_model.GetNormals()[0], GL_STATIC_DRAW);
 
     std::vector<unsigned short> indices;
 
@@ -266,12 +266,12 @@ setupOpenGL()
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0],
                  GL_STATIC_DRAW);
 
-    loadShaders("../res/shaders/vertex.glsl", "../res/shaders/fragment.glsl");
+    LoadShaders("../res/shaders/vertex.glsl", "../res/shaders/fragment.glsl");
     g_mvpMatrixId = glGetUniformLocation(g_programId, "mvpMatrix");
     g_modelMatrixId = glGetUniformLocation(g_programId, "modelMatris");
     g_viewMatrixId = glGetUniformLocation(g_programId, "modelMatrix");
 
-    g_textureId = loadDDS("../res/textures/uvmap.DDS");
+    g_textureId = LoadDDS("../res/textures/uvmap.DDS");
     g_uniformTextureId = glGetUniformLocation(g_programId, "myTextureSampler");
 
     glUseProgram(g_programId);
@@ -281,7 +281,7 @@ setupOpenGL()
 }
 
 static void
-cleanupOpenGL()
+CleanupOpenGL()
 {
     glDeleteProgram(g_programId);
     glDeleteBuffers(1, &g_normalBufferId);
@@ -292,7 +292,7 @@ cleanupOpenGL()
 }
 
 static void
-loadShaders(const std::string &vertexShaderFile, const std::string &fragmentShaderFile)
+LoadShaders(const std::string &vertexShaderFile, const std::string &fragmentShaderFile)
 {
     g_programId = glCreateProgram();
     GLuint vsId = glCreateShader(GL_VERTEX_SHADER);
@@ -300,8 +300,8 @@ loadShaders(const std::string &vertexShaderFile, const std::string &fragmentShad
     GLint result = GL_FALSE;
     GLint infoLogLength;
 
-    compileShader(vsId, vertexShaderFile);
-    compileShader(fsId, fragmentShaderFile);
+    CompileShader(vsId, vertexShaderFile);
+    CompileShader(fsId, fragmentShaderFile);
     glAttachShader(g_programId, vsId);
     glAttachShader(g_programId, fsId);
     glLinkProgram(g_programId);
@@ -317,7 +317,7 @@ loadShaders(const std::string &vertexShaderFile, const std::string &fragmentShad
 }
 
 static void
-compileShader(GLuint shaderId, const std::string sourceFile)
+CompileShader(GLuint shaderId, const std::string sourceFile)
 {
     std::string shaderSrc;
     std::ifstream file { sourceFile };
@@ -348,7 +348,7 @@ compileShader(GLuint shaderId, const std::string sourceFile)
 }
 
 static void
-processInputs()
+ProcessInputs()
 {
     static double lastTime = glfwGetTime();
     double now = glfwGetTime();
@@ -385,7 +385,7 @@ processInputs()
 }
 
 static void
-showStatus(double boxHeight, double fps)
+ShowStatus(double boxHeight, double fps)
 {
     static bool firstRun = true;
 

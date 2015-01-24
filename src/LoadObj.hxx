@@ -8,6 +8,6 @@
 
 class Model;
 
-Model loadModelFromObjFile(const std::string &path);
+Model LoadModelFromObjFile(const std::string &path);
 
 #endif // PHYSICSGAMES_HELLO_OBJLOADER_H_

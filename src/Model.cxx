@@ -13,17 +13,17 @@ Model::Model(std::vector<glm::vec3> &vertices, std::vector<glm::vec2> &uvCoords,
     m_normals{normals}
 {}
 
-std::vector<glm::vec3> &Model::vertices()
+std::vector<glm::vec3> &Model::GetVertices()
 {
     return m_vertices;
 }
 
-std::vector<glm::vec2> &Model::uvCoords()
+std::vector<glm::vec2> &Model::GetUvCoords()
 {
     return m_uvCoords;
 }
 
-std::vector<glm::vec3> &Model::normals()
+std::vector<glm::vec3> &Model::GetNormals()
 {
     return m_normals;
 }
