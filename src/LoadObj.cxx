@@ -5,20 +5,20 @@
 #include <fstream>
 #include <iostream>
 
-static const size_t FACE_VERTEX { 0 };
-static const size_t FACE_UV_COORD { 1 };
-static const size_t FACE_NORMAL { 2 };
+static const size_t FACE_VERTEX{0};
+static const size_t FACE_UV_COORD{1};
+static const size_t FACE_NORMAL{2};
 
 static bool ParseTriplet(std::ifstream &file, std::vector<unsigned int> &vec);
-static bool ParseFace(std::ifstream &file, std::vector<std::vector<unsigned int>> &faceIndices);
+static bool ParseFace(std::ifstream &file,
+                      std::vector<std::vector<unsigned int>> &faceIndices);
 
-Model
-LoadModelFromObjFile(const std::string &path)
+Model LoadModelFromObjFile(const std::string &path)
 {
     std::vector<unsigned int> vertexIdx, uvIdx, normalIdx;
     std::vector<glm::vec3> modelVertices, modelNormals, tmpVertices, tmpNormals;
     std::vector<glm::vec2> modelUVs, tmpUVs;
-    std::ifstream file { path };
+    std::ifstream file{path};
 
     if (file.is_open()) {
         while (!file.eof()) {
@@ -46,7 +46,7 @@ LoadModelFromObjFile(const std::string &path)
                 file >> normal.z;
                 tmpNormals.push_back(normal);
             } else if (strbuf == "f") {
-                std::vector<std::vector<unsigned int>> faceIndices { 3 };
+                std::vector<std::vector<unsigned int>> faceIndices{3};
 
                 if (!ParseFace(file, faceIndices)) {
                     std::cerr << "Error: Failed to parse face." << std::endl;
@@ -80,8 +80,7 @@ LoadModelFromObjFile(const std::string &path)
     return Model{modelVertices, modelUVs, modelNormals};
 }
 
-static bool
-ParseTriplet(std::ifstream &file, std::vector<unsigned int> &vec)
+static bool ParseTriplet(std::ifstream &file, std::vector<unsigned int> &vec)
 {
     unsigned int num;
     char slash;
@@ -102,8 +101,8 @@ ParseTriplet(std::ifstream &file, std::vector<unsigned int> &vec)
     return true;
 }
 
-static bool
-ParseFace(std::ifstream &file, std::vector<std::vector<unsigned int>> &faceIndices)
+static bool ParseFace(std::ifstream &file,
+                      std::vector<std::vector<unsigned int>> &faceIndices)
 {
     // 3 components -> 3 iterations
     for (size_t i = 0; i < 3; ++i) {

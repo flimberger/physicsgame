@@ -1,0 +1,6 @@
+BasedOnStyle: LLVM
+BreakBeforeBraces: Linux
+Cpp11BracedListStyle: true
+IndentCaseLabels: false
+IndentWidth: 4
+Standard: Cpp11

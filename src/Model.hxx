@@ -6,7 +6,7 @@
 
 class Model
 {
-public:
+  public:
     Model();
     Model(std::vector<glm::vec3> &vertices, std::vector<glm::vec2> &uvCoords,
           std::vector<glm::vec3> &normals);
@@ -15,7 +15,7 @@ public:
     std::vector<glm::vec2> &GetUvCoords();
     std::vector<glm::vec3> &GetNormals();
 
-private:
+  private:
     std::vector<glm::vec3> m_vertices;
     std::vector<glm::vec2> m_uvCoords;
     std::vector<glm::vec3> m_normals;

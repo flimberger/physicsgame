@@ -46,103 +46,92 @@ static GLuint g_modelMatrixId;
 static GLuint g_viewMatrixId;
 static GLFWwindow *g_window;
 static Model g_model;
-static glm::vec3 g_position { 3, 1, 9 };
+static glm::vec3 g_position{3, 1, 9};
 static glm::vec3 g_direction;
 static glm::vec3 g_right;
 static glm::vec3 g_up;
-static float g_horizontalAngle { 3.14f };
-static float g_verticalAngle { 0.0f };
-static const float SPEED { 5.0f };
-static const float MOUSE_SPEED { 0.02f };
+static float g_horizontalAngle{3.14f};
+static float g_verticalAngle{0.0f};
+static const float SPEED{5.0f};
+static const float MOUSE_SPEED{0.02f};
 
 static void SetupOpenGL();
 static void CleanupOpenGL();
-static void LoadShaders(const std::string &vertexShaderFile, const std::string &fragmentShaderFile);
+static void LoadShaders(const std::string &vertexShaderFile,
+                        const std::string &fragmentShaderFile);
 static void CompileShader(GLuint shaderId, const std::string sourceFile);
 static void ProcessInputs();
 static void ShowStatus(double boxHeight, double fps);
 
-int
-main()
+int main()
 {
     SetupOpenGL();
 
-    std::unique_ptr<btBroadphaseInterface> broadphase { new btDbvtBroadphase };
-    std::unique_ptr<btDefaultCollisionConfiguration> collisionConfiguration {
-        new btDefaultCollisionConfiguration
-    };
-    std::unique_ptr<btCollisionDispatcher> dispatcher { new btCollisionDispatcher {
-        collisionConfiguration.get()
-    } };
-    std::unique_ptr<btSequentialImpulseConstraintSolver> solver {
-        new btSequentialImpulseConstraintSolver
-    };
-    std::unique_ptr<btDiscreteDynamicsWorld> dynamicsWorld { new btDiscreteDynamicsWorld {
-        dispatcher.get(), broadphase.get(), solver.get(), collisionConfiguration.get()
-    } };
-    dynamicsWorld->setGravity(btVector3 { 0, -10, 0 });
-    std::unique_ptr<btCollisionShape> groundShape {
-        new btStaticPlaneShape { btVector3 { 0, 1, 0 }, 1 }
-    };
-    std::unique_ptr<btSphereShape> fallShape { new btSphereShape { 1 } };
-    std::unique_ptr<btDefaultMotionState> groundMotionState { new btDefaultMotionState {
-        btTransform { btQuaternion { 0, 0, 0, 1 }, btVector3 { 0, -1, 0 } }
-    } };
-    btRigidBody::btRigidBodyConstructionInfo groundRigidBodyConstructionInfo {
-        0, groundMotionState.get(), groundShape.get(), btVector3 { 0, 0, 0 }
-    };
-    std::unique_ptr<btRigidBody> groundRigidBody { new btRigidBody {
-        groundRigidBodyConstructionInfo
-    } };
+    std::unique_ptr<btBroadphaseInterface> broadphase{new btDbvtBroadphase};
+    std::unique_ptr<btDefaultCollisionConfiguration> collisionConfiguration{
+        new btDefaultCollisionConfiguration};
+    std::unique_ptr<btCollisionDispatcher> dispatcher{
+        new btCollisionDispatcher{collisionConfiguration.get()}};
+    std::unique_ptr<btSequentialImpulseConstraintSolver> solver{
+        new btSequentialImpulseConstraintSolver};
+    std::unique_ptr<btDiscreteDynamicsWorld> dynamicsWorld{
+        new btDiscreteDynamicsWorld{dispatcher.get(), broadphase.get(),
+                                    solver.get(),
+                                    collisionConfiguration.get()}};
+    dynamicsWorld->setGravity(btVector3{0, -10, 0});
+    std::unique_ptr<btCollisionShape> groundShape{
+        new btStaticPlaneShape{btVector3{0, 1, 0}, 1}};
+    std::unique_ptr<btSphereShape> fallShape{new btSphereShape{1}};
+    std::unique_ptr<btDefaultMotionState> groundMotionState{
+        new btDefaultMotionState{
+            btTransform{btQuaternion{0, 0, 0, 1}, btVector3{0, -1, 0}}}};
+    btRigidBody::btRigidBodyConstructionInfo groundRigidBodyConstructionInfo{
+        0, groundMotionState.get(), groundShape.get(), btVector3{0, 0, 0}};
+    std::unique_ptr<btRigidBody> groundRigidBody{
+        new btRigidBody{groundRigidBodyConstructionInfo}};
 
     dynamicsWorld->addRigidBody(groundRigidBody.get());
 
-    std::unique_ptr<btDefaultMotionState> fallMotionState { new btDefaultMotionState {
-        btTransform { btQuaternion { 0, 0, 0, 1 }, btVector3 { 0, 50, 0 } }
-    } };
-    btScalar mass { 1 };
-    btVector3 fallInertia { 0, 0, 0 };
+    std::unique_ptr<btDefaultMotionState> fallMotionState{
+        new btDefaultMotionState{
+            btTransform{btQuaternion{0, 0, 0, 1}, btVector3{0, 50, 0}}}};
+    btScalar mass{1};
+    btVector3 fallInertia{0, 0, 0};
 
     fallShape->calculateLocalInertia(mass, fallInertia);
 
-    btRigidBody::btRigidBodyConstructionInfo fallRigidBodyConstructionInfo {
-        mass, fallMotionState.get(), fallShape.get(), fallInertia
-    };
-    std::unique_ptr<btRigidBody> fallRigidBody { new btRigidBody {
-        fallRigidBodyConstructionInfo
-    } };
+    btRigidBody::btRigidBodyConstructionInfo fallRigidBodyConstructionInfo{
+        mass, fallMotionState.get(), fallShape.get(), fallInertia};
+    std::unique_ptr<btRigidBody> fallRigidBody{
+        new btRigidBody{fallRigidBodyConstructionInfo}};
 
     dynamicsWorld->addRigidBody(fallRigidBody.get());
 
-    glm::mat4 projectionMatrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
+    glm::mat4 projectionMatrix =
+        glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
     glm::mat4 viewMatrix;
     glm::mat4 modelMatrix;
     glm::mat4 mvp;
-    glm::vec3 lightPosition { 3, 3, 3 };
-    glm::vec3 lightColor { 1, 1, 1 };
-    float lightPower { 50.0f };
+    glm::vec3 lightPosition{3, 3, 3};
+    glm::vec3 lightColor{1, 1, 1};
+    float lightPower{50.0f};
 
     btTransform transformation;
 
     double currentTime, lastTime = glfwGetTime();
-    double fps { 0.0 };
-    size_t nFrames { 0l };
+    double fps{0.0};
+    size_t nFrames{0l};
 
     do {
         dynamicsWorld->stepSimulation(1 / 60.0f, 10);
         fallRigidBody->getMotionState()->getWorldTransform(transformation);
 
         ProcessInputs();
-        modelMatrix = glm::translate(glm::mat4 { 1.0f }, glm::vec3 {
-            transformation.getOrigin().getX(),
-            transformation.getOrigin().getY(),
-            transformation.getOrigin().getZ()
-        });
-        viewMatrix = glm::lookAt(
-            g_position,
-            g_position + g_direction,
-            g_up
-        );
+        modelMatrix = glm::translate(
+            glm::mat4{1.0f}, glm::vec3{transformation.getOrigin().getX(),
+                                       transformation.getOrigin().getY(),
+                                       transformation.getOrigin().getZ()});
+        viewMatrix = glm::lookAt(g_position, g_position + g_direction, g_up);
         mvp = projectionMatrix * viewMatrix * modelMatrix;
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -150,7 +139,8 @@ main()
         glUniformMatrix4fv(g_mvpMatrixId, 1, GL_FALSE, &mvp[0][0]);
         glUniformMatrix4fv(g_modelMatrixId, 1, GL_FALSE, &modelMatrix[0][0]);
         glUniformMatrix4fv(g_viewMatrixId, 1, GL_FALSE, &viewMatrix[0][0]);
-        glUniform3f(g_lightPositionId, lightPosition.x, lightPosition.y, lightPosition.z);
+        glUniform3f(g_lightPositionId, lightPosition.x, lightPosition.y,
+                    lightPosition.z);
         glUniform3f(g_lightColorId, lightColor.x, lightColor.y, lightColor.z);
         glUniform1f(g_lightPowerId, lightPower);
 
@@ -172,7 +162,8 @@ main()
 
         glDrawArrays(GL_TRIANGLES, 0, g_model.GetVertices().size());
         // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_elementBufferId);
-        // glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, nullptr);
+        // glDrawElements(GL_TRIANGLES, indices.size(),
+        // GL_UNSIGNED_SHORT,nullptr);
 
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
@@ -181,7 +172,7 @@ main()
         currentTime = glfwGetTime();
         ++nFrames;
         if (currentTime - lastTime > 1.0) {
-            fps = 1000.0/nFrames;
+            fps = 1000.0 / nFrames;
             nFrames = 0;
             lastTime += 1.0;
         }
@@ -189,9 +180,9 @@ main()
 
         glfwSwapBuffers(g_window);
         glfwPollEvents();
-    } while (glfwGetKey(g_window, GLFW_KEY_ESCAPE) != GLFW_PRESS
-             && glfwGetKey(g_window, GLFW_KEY_Q) != GLFW_PRESS
-             && glfwWindowShouldClose(g_window) == 0);
+    } while (glfwGetKey(g_window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
+             glfwGetKey(g_window, GLFW_KEY_Q) != GLFW_PRESS &&
+             glfwWindowShouldClose(g_window) == 0);
     dynamicsWorld->removeRigidBody(fallRigidBody.get());
     dynamicsWorld->removeRigidBody(groundRigidBody.get());
     CleanupOpenGL();
@@ -204,8 +195,7 @@ main()
  *
  * Set up GLFW and GLEW, opens a window.
  */
-void
-SetupOpenGL()
+void SetupOpenGL()
 {
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW." << std::endl;
@@ -232,7 +222,7 @@ SetupOpenGL()
         exit(1);
     }
     glfwSetInputMode(g_window, GLFW_STICKY_KEYS, GL_TRUE);
-    glfwSetCursorPos(g_window, 1024/2, 768/2);
+    glfwSetCursorPos(g_window, 1024 / 2, 768 / 2);
 
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
     glEnable(GL_DEPTH_TEST);
@@ -246,24 +236,28 @@ SetupOpenGL()
 
     glGenBuffers(1, &g_vertexBufferId);
     glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferId);
-    glBufferData(GL_ARRAY_BUFFER, g_model.GetVertices().size() * sizeof(glm::vec3),
-                  &g_model.GetVertices()[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER,
+                 g_model.GetVertices().size() * sizeof(glm::vec3),
+                 &g_model.GetVertices()[0], GL_STATIC_DRAW);
 
     glGenBuffers(1, &g_uvCoordBufferId);
     glBindBuffer(GL_ARRAY_BUFFER, g_uvCoordBufferId);
-    glBufferData(GL_ARRAY_BUFFER, g_model.GetUvCoords().size() * sizeof(glm::vec2),
+    glBufferData(GL_ARRAY_BUFFER,
+                 g_model.GetUvCoords().size() * sizeof(glm::vec2),
                  &g_model.GetUvCoords()[0], GL_STATIC_DRAW);
 
     glGenBuffers(1, &g_normalBufferId);
     glBindBuffer(GL_ARRAY_BUFFER, g_normalBufferId);
-    glBufferData(GL_ARRAY_BUFFER, g_model.GetNormals().size() * sizeof(glm::vec3),
+    glBufferData(GL_ARRAY_BUFFER,
+                 g_model.GetNormals().size() * sizeof(glm::vec3),
                  &g_model.GetNormals()[0], GL_STATIC_DRAW);
 
     std::vector<unsigned short> indices;
 
     glGenBuffers(1, &g_elementBufferId);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_elementBufferId);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0],
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                 indices.size() * sizeof(unsigned short), &indices[0],
                  GL_STATIC_DRAW);
 
     LoadShaders("../res/shaders/vertex.glsl", "../res/shaders/fragment.glsl");
@@ -275,13 +269,13 @@ SetupOpenGL()
     g_uniformTextureId = glGetUniformLocation(g_programId, "myTextureSampler");
 
     glUseProgram(g_programId);
-    g_lightPositionId = glGetUniformLocation(g_programId, "lightPosition_worldspace");
+    g_lightPositionId =
+        glGetUniformLocation(g_programId, "lightPosition_worldspace");
     g_lightColorId = glGetUniformLocation(g_programId, "lightColor");
     g_lightPowerId = glGetUniformLocation(g_programId, "lightPower");
 }
 
-static void
-CleanupOpenGL()
+static void CleanupOpenGL()
 {
     glDeleteProgram(g_programId);
     glDeleteBuffers(1, &g_normalBufferId);
@@ -291,8 +285,8 @@ CleanupOpenGL()
     glfwTerminate();
 }
 
-static void
-LoadShaders(const std::string &vertexShaderFile, const std::string &fragmentShaderFile)
+static void LoadShaders(const std::string &vertexShaderFile,
+                        const std::string &fragmentShaderFile)
 {
     g_programId = glCreateProgram();
     GLuint vsId = glCreateShader(GL_VERTEX_SHADER);
@@ -316,11 +310,10 @@ LoadShaders(const std::string &vertexShaderFile, const std::string &fragmentShad
     glDeleteShader(fsId);
 }
 
-static void
-CompileShader(GLuint shaderId, const std::string sourceFile)
+static void CompileShader(GLuint shaderId, const std::string sourceFile)
 {
     std::string shaderSrc;
-    std::ifstream file { sourceFile };
+    std::ifstream file{sourceFile};
 
     if (file.is_open()) {
         std::string ln;
@@ -328,7 +321,8 @@ CompileShader(GLuint shaderId, const std::string sourceFile)
         while (std::getline(file, ln))
             shaderSrc += "\n" + ln;
     } else {
-        std::cerr << "Warning: failed to open vertex shader source file." << std::endl;
+        std::cerr << "Warning: failed to open vertex shader source file."
+                  << std::endl;
         exit(1);
     }
 
@@ -347,8 +341,7 @@ CompileShader(GLuint shaderId, const std::string sourceFile)
     std::cerr << &infoLog[0] << std::endl;
 }
 
-static void
-ProcessInputs()
+static void ProcessInputs()
 {
     static double lastTime = glfwGetTime();
     double now = glfwGetTime();
@@ -358,20 +351,15 @@ ProcessInputs()
     lastTime = now;
     glfwGetCursorPos(g_window, &xPos, &yPos);
     // TODO: glfwGetWindowSize
-    glfwSetCursorPos(g_window, 1024/2, 768/2);
-    g_horizontalAngle += MOUSE_SPEED * deltaTime * float(1024/2 - xPos);
-    g_verticalAngle += MOUSE_SPEED * deltaTime * float(768/2 - yPos);
+    glfwSetCursorPos(g_window, 1024 / 2, 768 / 2);
+    g_horizontalAngle += MOUSE_SPEED * deltaTime * float(1024 / 2 - xPos);
+    g_verticalAngle += MOUSE_SPEED * deltaTime * float(768 / 2 - yPos);
 
-    g_direction = {
-        cos(g_verticalAngle) * sin(g_horizontalAngle),
-        sin(g_verticalAngle),
-        cos(g_verticalAngle) * cos(g_horizontalAngle)
-    };
-    g_right = glm::vec3{
-        sin(g_horizontalAngle - M_PI/2),
-        0,
-        cos(g_horizontalAngle - M_PI/2)
-    };
+    g_direction = {cos(g_verticalAngle) * sin(g_horizontalAngle),
+                   sin(g_verticalAngle),
+                   cos(g_verticalAngle) * cos(g_horizontalAngle)};
+    g_right = glm::vec3{sin(g_horizontalAngle - M_PI / 2), 0,
+                        cos(g_horizontalAngle - M_PI / 2)};
     g_up = glm::cross(g_right, g_direction);
 
     if (glfwGetKey(g_window, GLFW_KEY_UP) == GLFW_PRESS)
@@ -384,8 +372,7 @@ ProcessInputs()
         g_position -= g_right * deltaTime * SPEED;
 }
 
-static void
-ShowStatus(double boxHeight, double fps)
+static void ShowStatus(double boxHeight, double fps)
 {
     static bool firstRun = true;
 
@@ -398,6 +385,6 @@ ShowStatus(double boxHeight, double fps)
     std::cout << "\x1b[1F"; // one line up
     std::cout << "\x1b[2K"; // erase line
 draw:
-    std::cout << "Box height: " << boxHeight << std::endl
-              << fps << " ms/Frame" << std::endl;
+    std::cout << "Box height: " << boxHeight << std::endl << fps << " ms/Frame"
+              << std::endl;
 }
