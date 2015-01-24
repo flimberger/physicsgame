@@ -367,7 +367,7 @@ ProcessInputs()
         sin(g_verticalAngle),
         cos(g_verticalAngle) * cos(g_horizontalAngle)
     };
-    g_right = {
+    g_right = glm::vec3{
         sin(g_horizontalAngle - M_PI/2),
         0,
         cos(g_horizontalAngle - M_PI/2)
