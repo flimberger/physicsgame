@@ -30,6 +30,37 @@
 #include <memory>
 #include <vector>
 
+namespace
+{
+struct Player
+{
+    Player();
+
+    glm::vec3 &GetPosition();
+    glm::vec3 &GetDirection();
+    glm::vec3 &GetRight();
+    glm::vec3 &GetUp();
+
+  private:
+    glm::vec3 m_position;
+    glm::vec3 m_direction;
+    glm::vec3 m_right;
+    glm::vec3 m_up;
+};
+}
+
+Player::Player() : m_position{3, 1, 9} {}
+
+glm::vec3 &Player::GetPosition() { return m_position; }
+
+glm::vec3 &Player::GetDirection() { return m_direction; }
+
+glm::vec3 &Player::GetRight() { return m_right; }
+
+glm::vec3 &Player::GetUp() { return m_up; }
+
+static Player *g_player;
+static Model *g_model;
 static GLuint g_vertexArrayId;
 static GLuint g_vertexBufferId;
 static GLuint g_uvCoordBufferId;
@@ -45,13 +76,9 @@ static GLint g_mvpMatrixId;
 static GLint g_modelMatrixId;
 static GLint g_viewMatrixId;
 static GLFWwindow *g_window;
-static Model g_model;
-static glm::vec3 g_position{3, 1, 9};
-static glm::vec3 g_direction;
-static glm::vec3 g_right;
-static glm::vec3 g_up;
 static float g_horizontalAngle{3.14f};
 static float g_verticalAngle{0.0f};
+
 static const float SPEED{5.0f};
 static const float MOUSE_SPEED{0.02f};
 
@@ -65,6 +92,12 @@ static void ShowStatus(double boxHeight, double fps);
 
 int main()
 {
+    std::unique_ptr<Model> modelMem =
+        LoadModelFromObjFile("../res/textures/cube.obj");
+    std::unique_ptr<Player> playerMem{new Player};
+
+    g_model = modelMem.get();
+    g_player = playerMem.get();
     SetupOpenGL();
 
     std::unique_ptr<btBroadphaseInterface> broadphase{new btDbvtBroadphase};
@@ -128,10 +161,13 @@ int main()
 
         ProcessInputs();
         modelMatrix = glm::translate(
-            glm::mat4{1.0f}, glm::vec3{transformation.getOrigin().getX(),
+            glm::mat4(1.0f), glm::vec3{transformation.getOrigin().getX(),
                                        transformation.getOrigin().getY(),
                                        transformation.getOrigin().getZ()});
-        viewMatrix = glm::lookAt(g_position, g_position + g_direction, g_up);
+        viewMatrix =
+            glm::lookAt(g_player->GetPosition(),
+                        g_player->GetPosition() + g_player->GetDirection(),
+                        g_player->GetUp());
         mvp = projectionMatrix * viewMatrix * modelMatrix;
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -161,7 +197,7 @@ int main()
         glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
         glDrawArrays(GL_TRIANGLES, 0,
-                     static_cast<GLsizei>(g_model.GetVertices().size()));
+                     static_cast<GLsizei>(g_model->GetVertices().size()));
         // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_elementBufferId);
         // glDrawElements(GL_TRIANGLES, indices.size(),
         // GL_UNSIGNED_SHORT,nullptr);
@@ -233,25 +269,23 @@ void SetupOpenGL()
     glGenVertexArrays(1, &g_vertexArrayId);
     glBindVertexArray(g_vertexArrayId);
 
-    g_model = LoadModelFromObjFile("../res/textures/cube.obj");
-
     glGenBuffers(1, &g_vertexBufferId);
     glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferId);
     glBufferData(GL_ARRAY_BUFFER,
-                 g_model.GetVertices().size() * sizeof(glm::vec3),
-                 &g_model.GetVertices()[0], GL_STATIC_DRAW);
+                 g_model->GetVertices().size() * sizeof(glm::vec3),
+                 &g_model->GetVertices()[0], GL_STATIC_DRAW);
 
     glGenBuffers(1, &g_uvCoordBufferId);
     glBindBuffer(GL_ARRAY_BUFFER, g_uvCoordBufferId);
     glBufferData(GL_ARRAY_BUFFER,
-                 g_model.GetUvCoords().size() * sizeof(glm::vec2),
-                 &g_model.GetUvCoords()[0], GL_STATIC_DRAW);
+                 g_model->GetUvCoords().size() * sizeof(glm::vec2),
+                 &g_model->GetUvCoords()[0], GL_STATIC_DRAW);
 
     glGenBuffers(1, &g_normalBufferId);
     glBindBuffer(GL_ARRAY_BUFFER, g_normalBufferId);
     glBufferData(GL_ARRAY_BUFFER,
-                 g_model.GetNormals().size() * sizeof(glm::vec3),
-                 &g_model.GetNormals()[0], GL_STATIC_DRAW);
+                 g_model->GetNormals().size() * sizeof(glm::vec3),
+                 &g_model->GetNormals()[0], GL_STATIC_DRAW);
 
     std::vector<unsigned short> indices;
 
@@ -358,21 +392,22 @@ static void ProcessInputs()
     g_horizontalAngle += MOUSE_SPEED * deltaTime * float(1024 / 2 - xPos);
     g_verticalAngle += MOUSE_SPEED * deltaTime * float(768 / 2 - yPos);
 
-    g_direction = {cos(g_verticalAngle) * sin(g_horizontalAngle),
-                   sin(g_verticalAngle),
-                   cos(g_verticalAngle) * cos(g_horizontalAngle)};
-    g_right = glm::vec3{sin(g_horizontalAngle - M_PI / 2), 0,
-                        cos(g_horizontalAngle - M_PI / 2)};
-    g_up = glm::cross(g_right, g_direction);
+    g_player->GetDirection() = {cos(g_verticalAngle) * sin(g_horizontalAngle),
+                                sin(g_verticalAngle),
+                                cos(g_verticalAngle) * cos(g_horizontalAngle)};
+    g_player->GetRight() = glm::vec3{sin(g_horizontalAngle - M_PI / 2), 0,
+                                     cos(g_horizontalAngle - M_PI / 2)};
+    g_player->GetUp() =
+        glm::cross(g_player->GetRight(), g_player->GetDirection());
 
     if (glfwGetKey(g_window, GLFW_KEY_UP) == GLFW_PRESS)
-        g_position += g_direction * deltaTime * SPEED;
+        g_player->GetPosition() += g_player->GetDirection() * deltaTime * SPEED;
     if (glfwGetKey(g_window, GLFW_KEY_DOWN) == GLFW_PRESS)
-        g_position -= g_direction * deltaTime * SPEED;
+        g_player->GetPosition() -= g_player->GetDirection() * deltaTime * SPEED;
     if (glfwGetKey(g_window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-        g_position += g_right * deltaTime * SPEED;
+        g_player->GetPosition() += g_player->GetRight() * deltaTime * SPEED;
     if (glfwGetKey(g_window, GLFW_KEY_LEFT) == GLFW_PRESS)
-        g_position -= g_right * deltaTime * SPEED;
+        g_player->GetPosition() -= g_player->GetRight() * deltaTime * SPEED;
 }
 
 static void ShowStatus(double boxHeight, double fps)

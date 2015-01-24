@@ -13,7 +13,7 @@ static bool ParseTriplet(std::ifstream &file, std::vector<unsigned int> &vec);
 static bool ParseFace(std::ifstream &file,
                       std::vector<std::vector<unsigned int>> &faceIndices);
 
-Model LoadModelFromObjFile(const std::string &path)
+std::unique_ptr<Model> LoadModelFromObjFile(const std::string &path)
 {
     std::vector<unsigned int> vertexIdx, uvIdx, normalIdx;
     std::vector<glm::vec3> modelVertices, modelNormals, tmpVertices, tmpNormals;
@@ -59,6 +59,10 @@ Model LoadModelFromObjFile(const std::string &path)
                 }
             }
         }
+    } else {
+        std::cerr << "Failed to open file \"" << path << "\"" << std::endl;
+
+        return std::unique_ptr<Model>{};
     }
     for (auto i : vertexIdx) {
         glm::vec3 vertex = tmpVertices[i - 1];
@@ -77,7 +81,8 @@ Model LoadModelFromObjFile(const std::string &path)
         std::clog << vec.x << ", " << vec.y << ", " << vec.z << std::endl;
     }
 
-    return Model{modelVertices, modelUVs, modelNormals};
+    return std::unique_ptr<Model>{
+        new Model{modelVertices, modelUVs, modelNormals}};
 }
 
 static bool ParseTriplet(std::ifstream &file, std::vector<unsigned int> &vec)
