@@ -5,9 +5,9 @@
 #include <fstream>
 #include <iostream>
 
-static const size_t FACE_VERTEX{0};
-static const size_t FACE_UV_COORD{1};
-static const size_t FACE_NORMAL{2};
+static const std::size_t FACE_VERTEX{0};
+static const std::size_t FACE_UV_COORD{1};
+static const std::size_t FACE_NORMAL{2};
 
 static bool ParseTriplet(std::ifstream &file, std::vector<unsigned int> &vec);
 static bool ParseFace(std::ifstream &file,
@@ -52,7 +52,7 @@ std::unique_ptr<Model> LoadModelFromObjFile(const std::string &path)
                     std::cerr << "Error: Failed to parse face." << std::endl;
                     exit(1);
                 }
-                for (size_t i = 0; i < 3; ++i) {
+                for (std::size_t i = 0; i < 3; ++i) {
                     vertexIdx.push_back(faceIndices[FACE_VERTEX][i]);
                     uvIdx.push_back(faceIndices[FACE_UV_COORD][i]);
                     normalIdx.push_back(faceIndices[FACE_NORMAL][i]);
@@ -110,7 +110,7 @@ static bool ParseFace(std::ifstream &file,
                       std::vector<std::vector<unsigned int>> &faceIndices)
 {
     // 3 components -> 3 iterations
-    for (size_t i = 0; i < 3; ++i) {
+    for (std::size_t i = 0; i < 3; ++i) {
         std::vector<unsigned int> vec;
 
         if (!ParseTriplet(file, vec))

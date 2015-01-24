@@ -153,7 +153,7 @@ int main()
 
     double currentTime, lastTime = glfwGetTime();
     double fps{0.0};
-    size_t nFrames{0l};
+    std::size_t nFrames{0l};
 
     do {
         dynamicsWorld->stepSimulation(1 / 60.0f, 10);

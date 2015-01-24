@@ -6,14 +6,14 @@
 #include <iostream>
 #include <memory>
 
-static const uint32_t FOURCC_DXT1 = 0x31545844;
-static const uint32_t FOURCC_DXT3 = 0x33545844;
-static const uint32_t FOURCC_DXT5 = 0x35545844;
+static const std::uint32_t FOURCC_DXT1 = 0x31545844;
+static const std::uint32_t FOURCC_DXT3 = 0x33545844;
+static const std::uint32_t FOURCC_DXT5 = 0x35545844;
 
 GLuint LoadDDS(const std::string &path)
 {
-    uint8_t header[124];
-    FILE *fp = fopen(path.c_str(), "rb");
+    std::uint8_t header[124];
+    FILE *fp = std::fopen(path.c_str(), "rb");
 
     if (fp == nullptr) {
         std::cerr << "Error loading texture: failed to open file \"" << path
@@ -25,7 +25,7 @@ GLuint LoadDDS(const std::string &path)
     char filecode[4];
 
     fread(filecode, 1, 4, fp);
-    if (strncmp(filecode, "DDS ", 4) != 0) {
+    if (std::strncmp(filecode, "DDS ", 4) != 0) {
         std::cerr << "Error loading texture: file has incorrect code."
                   << std::endl;
         fclose(fp);
@@ -34,17 +34,19 @@ GLuint LoadDDS(const std::string &path)
     }
     fread(header, 1, 124, fp);
 
-    uint32_t height = *reinterpret_cast<uint32_t *>(&(header[8]));
-    uint32_t width = *reinterpret_cast<uint32_t *>(&(header[12]));
-    uint32_t linearSize = *reinterpret_cast<uint32_t *>(&(header[16]));
-    uint32_t mipMapCount = *reinterpret_cast<uint32_t *>(&(header[24]));
-    uint32_t fourCC = *reinterpret_cast<uint32_t *>(&(header[80]));
-    size_t bufsize = mipMapCount > 1 ? linearSize * 2 : linearSize;
-    // uint8_t *buffer = new uint8_t[bufsize];
-    std::unique_ptr<uint8_t> buffer{new uint8_t[bufsize]};
+    std::uint32_t height = *reinterpret_cast<std::uint32_t *>(&(header[8]));
+    std::uint32_t width = *reinterpret_cast<std::uint32_t *>(&(header[12]));
+    std::uint32_t linearSize =
+        *reinterpret_cast<std::uint32_t *>(&(header[16]));
+    std::uint32_t mipMapCount =
+        *reinterpret_cast<std::uint32_t *>(&(header[24]));
+    std::uint32_t fourCC = *reinterpret_cast<std::uint32_t *>(&(header[80]));
+    std::size_t bufsize = mipMapCount > 1 ? linearSize * 2 : linearSize;
+    // std::uint8_t *buffer = new std::uint8_t[bufsize];
+    std::unique_ptr<std::uint8_t> buffer{new std::uint8_t[bufsize]};
 
-    fread(buffer.get(), 1, bufsize, fp);
-    fclose(fp);
+    std::fread(buffer.get(), 1, bufsize, fp);
+    std::fclose(fp);
 
     GLuint format;
     switch (fourCC) {
@@ -67,11 +69,13 @@ GLuint LoadDDS(const std::string &path)
     glBindTexture(GL_TEXTURE_2D, textureId);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    size_t blocksize = (format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
-    size_t offset = 0;
+    std::size_t blocksize =
+        (format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
+    std::size_t offset = 0;
 
-    for (size_t level = 0; level < mipMapCount && (width || height); ++level) {
-        size_t size = ((width + 3) / 4) * ((height + 3) / 4) * blocksize;
+    for (std::size_t level = 0; level < mipMapCount && (width || height);
+         ++level) {
+        std::size_t size = ((width + 3) / 4) * ((height + 3) / 4) * blocksize;
 
         glCompressedTexImage2D(GL_TEXTURE_2D, level, format, width, height, 0,
                                size, buffer.get() + offset);
