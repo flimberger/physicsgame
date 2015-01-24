@@ -160,7 +160,8 @@ int main()
         glBindBuffer(GL_ARRAY_BUFFER, g_normalBufferId);
         glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-        glDrawArrays(GL_TRIANGLES, 0, g_model.GetVertices().size());
+        glDrawArrays(GL_TRIANGLES, 0,
+                     static_cast<GLsizei>(g_model.GetVertices().size()));
         // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_elementBufferId);
         // glDrawElements(GL_TRIANGLES, indices.size(),
         // GL_UNSIGNED_SHORT,nullptr);
