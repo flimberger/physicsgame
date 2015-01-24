@@ -24,16 +24,16 @@ set(physgame_LIBS
 )
 
 set(physgame_SRCS
-    physgame.cpp
-    LoadDDS.cpp
-    Model.cpp
-    LoadObj.cpp
+    physgame.cxx
+    LoadDDS.cxx
+    Model.cxx
+    LoadObj.cxx
 )
 
 set(physgame_HDRS
-    LoadDDS.hpp
-    Model.hpp
-    LoadObj.hpp
+    LoadDDS.hxx
+    Model.hxx
+    LoadObj.hxx
 )
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)

@@ -1,4 +1,4 @@
-#include "LoadDDS.hpp"
+#include "LoadDDS.hxx"
 
 #include <cstdint>
 #include <cstdio>

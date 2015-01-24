@@ -1,6 +1,6 @@
-#include "LoadObj.hpp"
+#include "LoadObj.hxx"
 
-#include "Model.hpp"
+#include "Model.hxx"
 
 #include <fstream>
 #include <iostream>

@@ -1,4 +1,4 @@
-#include "Model.hpp"
+#include "Model.hxx"
 
 Model::Model()
   : m_vertices{},

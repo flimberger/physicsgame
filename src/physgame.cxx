@@ -1,8 +1,19 @@
-#include "Model.hpp"
-#include "LoadDDS.hpp"
-#include "LoadObj.hpp"
+#include "Model.hxx"
+#include "LoadDDS.hxx"
+#include "LoadObj.hxx"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#pragma clang diagnostic ignored "-Wextra-semi"
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#pragma clang diagnostic ignored "-Wdocumentation"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic ignored "-Woverloaded-virtual"
+#pragma clang diagnostic ignored "-Wcast-align"
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#pragma clang diagnostic ignored "-Wweak-vtables"
 #include <btBulletDynamicsCommon.h>
+#pragma clang diagnostic pop
 
 #include <GL/glew.h>
 
