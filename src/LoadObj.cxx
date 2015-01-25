@@ -1,6 +1,6 @@
 #include "LoadObj.hxx"
 
-#include "Model.hxx"
+#include "Mesh.hxx"
 
 #include <fstream>
 #include <iostream>
@@ -13,7 +13,7 @@ static bool ParseTriplet(std::ifstream &file, std::vector<unsigned int> &vec);
 static bool ParseFace(std::ifstream &file,
                       std::vector<std::vector<unsigned int>> &faceIndices);
 
-std::unique_ptr<Model> LoadModelFromObjFile(const std::string &path)
+std::unique_ptr<Mesh> LoadMeshFromObjFile(const std::string &path)
 {
     std::vector<unsigned int> vertexIdx, uvIdx, normalIdx;
     std::vector<glm::vec3> modelVertices, modelNormals, tmpVertices, tmpNormals;
@@ -62,7 +62,7 @@ std::unique_ptr<Model> LoadModelFromObjFile(const std::string &path)
     } else {
         std::cerr << "Failed to open file \"" << path << "\"" << std::endl;
 
-        return std::unique_ptr<Model>{};
+        return std::unique_ptr<Mesh>{};
     }
     for (auto i : vertexIdx) {
         glm::vec3 vertex = tmpVertices[i - 1];
@@ -81,8 +81,8 @@ std::unique_ptr<Model> LoadModelFromObjFile(const std::string &path)
         std::clog << vec.x << ", " << vec.y << ", " << vec.z << std::endl;
     }
 
-    return std::unique_ptr<Model>{
-        new Model{modelVertices, modelUVs, modelNormals}};
+    return std::unique_ptr<Mesh>{
+        new Mesh{modelVertices, modelUVs, modelNormals}};
 }
 
 static bool ParseTriplet(std::ifstream &file, std::vector<unsigned int> &vec)

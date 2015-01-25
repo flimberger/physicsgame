@@ -1,7 +1,8 @@
 #pragma once
 
-#include <GL/glew.h>
+#include "Texture.hxx"
 
+#include <memory>
 #include <string>
 
-GLuint LoadDDS(const std::string &path);
+std::unique_ptr<Texture> LoadDDS(const std::string &path);

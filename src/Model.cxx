@@ -1,15 +1,17 @@
 #include "Model.hxx"
 
-Model::Model() : m_vertices{}, m_uvCoords{}, m_normals{} {}
-
-Model::Model(std::vector<glm::vec3> &vertices, std::vector<glm::vec2> &uvCoords,
-             std::vector<glm::vec3> &normals)
-    : m_vertices{vertices}, m_uvCoords{uvCoords}, m_normals{normals}
+Model::Model(const std::shared_ptr<Material> &material,
+             const std::shared_ptr<Mesh> &mesh)
+    : m_material{material}, m_mesh{mesh}
 {
 }
 
-std::vector<glm::vec3> &Model::GetVertices() { return m_vertices; }
+void Model::Draw() const
+{
+    m_material->Use();
+    m_mesh->Draw();
+}
 
-std::vector<glm::vec2> &Model::GetUvCoords() { return m_uvCoords; }
+const Material &Model::GetMaterial() const { return *m_material.get(); }
 
-std::vector<glm::vec3> &Model::GetNormals() { return m_normals; }
+const Mesh &Model::GetMesh() const { return *m_mesh.get(); }

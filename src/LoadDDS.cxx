@@ -10,7 +10,7 @@ static const std::uint32_t FOURCC_DXT1 = 0x31545844;
 static const std::uint32_t FOURCC_DXT3 = 0x33545844;
 static const std::uint32_t FOURCC_DXT5 = 0x35545844;
 
-GLuint LoadDDS(const std::string &path)
+std::unique_ptr<Texture> LoadDDS(const std::string &path)
 {
     std::uint8_t header[124];
     FILE *fp = std::fopen(path.c_str(), "rb");
@@ -19,7 +19,7 @@ GLuint LoadDDS(const std::string &path)
         std::cerr << "Error loading texture: failed to open file \"" << path
                   << "\"." << std::endl;
 
-        return 0;
+        return std::unique_ptr<Texture>{};
     }
 
     char filecode[4];
@@ -60,7 +60,7 @@ GLuint LoadDDS(const std::string &path)
         format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
         break;
     default:
-        return 0;
+        return std::unique_ptr<Texture>{};
     }
 
     GLuint textureId;
@@ -88,5 +88,5 @@ GLuint LoadDDS(const std::string &path)
             height = 1;
     }
 
-    return textureId;
+    return std::unique_ptr<Texture>{new Texture{textureId}};
 }

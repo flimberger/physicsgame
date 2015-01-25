@@ -4,8 +4,8 @@
 #include <memory>
 #include <string>
 
-class Model;
+struct Mesh;
 
-std::unique_ptr<Model> LoadModelFromObjFile(const std::string &path);
+std::unique_ptr<Mesh> LoadMeshFromObjFile(const std::string &path);
 
 #endif // PHYSICSGAMES_HELLO_OBJLOADER_H_

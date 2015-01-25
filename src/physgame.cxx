@@ -1,6 +1,10 @@
-#include "Model.hxx"
 #include "LoadDDS.hxx"
 #include "LoadObj.hxx"
+#include "Material.hxx"
+#include "Mesh.hxx"
+#include "Model.hxx"
+#include "Program.hxx"
+#include "Shader.hxx"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wold-style-cast"
@@ -75,44 +79,68 @@ void Player::SetRight(const glm::vec3 &newRight) { m_right = newRight; }
 
 void Player::SetUp(const glm::vec3 &newUp) { m_up = newUp; }
 
-static Player *g_player;
-static Model *g_model;
 static GLuint g_vertexArrayId;
-static GLuint g_vertexBufferId;
-static GLuint g_uvCoordBufferId;
-static GLuint g_normalBufferId;
-static GLuint g_elementBufferId;
-static GLuint g_textureId;
-static GLint g_lightPositionId;
-static GLint g_lightColorId;
-static GLint g_lightPowerId;
-static GLint g_uniformTextureId;
-static GLuint g_programId;
-static GLint g_mvpMatrixId;
-static GLint g_modelMatrixId;
-static GLint g_viewMatrixId;
-static GLFWwindow *g_window;
 
 static const float SPEED{5.0f};
 static const float MOUSE_SPEED{0.02f};
 
-static void SetupOpenGL();
+static GLFWwindow *SetupOpenGL();
 static void CleanupOpenGL();
-static void LoadShaders(const std::string &vertexShaderFile,
-                        const std::string &fragmentShaderFile);
-static void CompileShader(GLuint shaderId, const std::string sourceFile);
-static void ProcessInputs();
+static std::unique_ptr<Program>
+LoadShaders(const std::string &vertexShaderFile,
+            const std::string &fragmentShaderFile);
+static void ProcessInputs(GLFWwindow *window, Player *player);
 static void ShowStatus(double boxHeight, double fps);
 
 int main()
 {
-    std::unique_ptr<Model> modelMem =
-        LoadModelFromObjFile("../res/textures/cube.obj");
-    std::unique_ptr<Player> playerMem{new Player};
+    auto window = SetupOpenGL();
 
-    g_model = modelMem.get();
-    g_player = playerMem.get();
-    SetupOpenGL();
+    auto mesh =
+        std::shared_ptr<Mesh>{LoadMeshFromObjFile("../res/textures/cube.obj")};
+
+    if (!mesh) {
+        CleanupOpenGL();
+        std::cerr << "Failed to load mesh data" << std::endl;
+
+        return 0;
+    }
+
+    auto shaderProgram = std::shared_ptr<Program>{LoadShaders(
+        "../res/shaders/vertex.glsl", "../res/shaders/fragment.glsl")};
+
+    if (!shaderProgram) {
+        CleanupOpenGL();
+        std::cerr << "Failed to load shader program" << std::endl;
+
+        return 1;
+    }
+
+    GLuint programId = shaderProgram->GetGlId();
+    GLint mvpMatrixId = glGetUniformLocation(programId, "mvpMatrix");
+    GLint modelMatrixId = glGetUniformLocation(programId, "modelMatris");
+    GLint viewMatrixId = glGetUniformLocation(programId, "modelMatrix");
+
+    auto texture =
+        std::shared_ptr<Texture>{LoadDDS("../res/textures/uvmap.DDS")};
+
+    if (!texture) {
+        CleanupOpenGL();
+        std::cerr << "Failed to load texture" << std::endl;
+
+        return 1;
+    }
+
+    glUseProgram(programId);
+    GLint lightPositionId =
+        glGetUniformLocation(programId, "lightPosition_worldspace");
+    GLint lightColorId = glGetUniformLocation(programId, "lightColor");
+    GLint lightPowerId = glGetUniformLocation(programId, "lightPower");
+
+    auto material =
+        std::shared_ptr<Material>{new Material{shaderProgram, texture}};
+    auto model = std::unique_ptr<Model>{new Model{material, mesh}};
+    auto player = std::unique_ptr<Player>{new Player};
 
     std::unique_ptr<btBroadphaseInterface> broadphase{new btDbvtBroadphase};
     std::unique_ptr<btDefaultCollisionConfiguration> collisionConfiguration{
@@ -173,52 +201,26 @@ int main()
         dynamicsWorld->stepSimulation(1 / 60.0f, 10);
         fallRigidBody->getMotionState()->getWorldTransform(transformation);
 
-        ProcessInputs();
+        ProcessInputs(window, player.get());
         modelMatrix = glm::translate(
             glm::mat4(1.0f), glm::vec3{transformation.getOrigin().getX(),
                                        transformation.getOrigin().getY(),
                                        transformation.getOrigin().getZ()});
-        viewMatrix =
-            glm::lookAt(g_player->GetPosition(),
-                        g_player->GetPosition() + g_player->GetDirection(),
-                        g_player->GetUp());
+        viewMatrix = glm::lookAt(player->GetPosition(),
+                                 player->GetPosition() + player->GetDirection(),
+                                 player->GetUp());
         mvp = projectionMatrix * viewMatrix * modelMatrix;
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glUseProgram(g_programId);
-        glUniformMatrix4fv(g_mvpMatrixId, 1, GL_FALSE, &mvp[0][0]);
-        glUniformMatrix4fv(g_modelMatrixId, 1, GL_FALSE, &modelMatrix[0][0]);
-        glUniformMatrix4fv(g_viewMatrixId, 1, GL_FALSE, &viewMatrix[0][0]);
-        glUniform3f(g_lightPositionId, lightPosition.x, lightPosition.y,
+        glUniformMatrix4fv(mvpMatrixId, 1, GL_FALSE, &mvp[0][0]);
+        glUniformMatrix4fv(modelMatrixId, 1, GL_FALSE, &modelMatrix[0][0]);
+        glUniformMatrix4fv(viewMatrixId, 1, GL_FALSE, &viewMatrix[0][0]);
+        glUniform3f(lightPositionId, lightPosition.x, lightPosition.y,
                     lightPosition.z);
-        glUniform3f(g_lightColorId, lightColor.x, lightColor.y, lightColor.z);
-        glUniform1f(g_lightPowerId, lightPower);
+        glUniform3f(lightColorId, lightColor.x, lightColor.y, lightColor.z);
+        glUniform1f(lightPowerId, lightPower);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, g_textureId);
-        glUniform1i(g_uniformTextureId, 0);
-
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferId);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, g_uvCoordBufferId);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-        glEnableVertexAttribArray(2);
-        glBindBuffer(GL_ARRAY_BUFFER, g_normalBufferId);
-        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-        glDrawArrays(GL_TRIANGLES, 0,
-                     static_cast<GLsizei>(g_model->GetVertices().size()));
-        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_elementBufferId);
-        // glDrawElements(GL_TRIANGLES, indices.size(),
-        // GL_UNSIGNED_SHORT,nullptr);
-
-        glDisableVertexAttribArray(0);
-        glDisableVertexAttribArray(1);
-        glDisableVertexAttribArray(2);
+        model->Draw();
 
         currentTime = glfwGetTime();
         ++nFrames;
@@ -229,11 +231,11 @@ int main()
         }
         ShowStatus(transformation.getOrigin().getY(), fps);
 
-        glfwSwapBuffers(g_window);
+        glfwSwapBuffers(window);
         glfwPollEvents();
-    } while (glfwGetKey(g_window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
-             glfwGetKey(g_window, GLFW_KEY_Q) != GLFW_PRESS &&
-             glfwWindowShouldClose(g_window) == 0);
+    } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
+             glfwGetKey(window, GLFW_KEY_Q) != GLFW_PRESS &&
+             glfwWindowShouldClose(window) == 0);
     dynamicsWorld->removeRigidBody(fallRigidBody.get());
     dynamicsWorld->removeRigidBody(groundRigidBody.get());
     CleanupOpenGL();
@@ -246,7 +248,7 @@ int main()
  *
  * Set up GLFW and GLEW, opens a window.
  */
-void SetupOpenGL()
+GLFWwindow *SetupOpenGL()
 {
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW." << std::endl;
@@ -258,141 +260,60 @@ void SetupOpenGL()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    g_window = glfwCreateWindow(1024, 768, "Bullet + OpenGL", nullptr, nullptr);
+    auto window = glfwCreateWindow(1024, 768, "Bullet + OpenGL", nullptr, nullptr);
 
-    if (g_window == nullptr) {
+    if (window == nullptr) {
         std::cerr << "Failed to open GLFW window." << std::endl;
         glfwTerminate();
         exit(1);
     }
-    glfwMakeContextCurrent(g_window);
+    glfwMakeContextCurrent(window);
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK) {
         std::cerr << "Failed to initialize GLEW." << std::endl;
         glfwTerminate();
         exit(1);
     }
-    glfwSetInputMode(g_window, GLFW_STICKY_KEYS, GL_TRUE);
-    glfwSetInputMode(g_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    glGenVertexArrays(1, &g_vertexArrayId);
+    glBindVertexArray(g_vertexArrayId);
 
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glEnable(GL_CULL_FACE);
 
-    glGenVertexArrays(1, &g_vertexArrayId);
-    glBindVertexArray(g_vertexArrayId);
-
-    glGenBuffers(1, &g_vertexBufferId);
-    glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferId);
-    glBufferData(GL_ARRAY_BUFFER,
-                 g_model->GetVertices().size() * sizeof(glm::vec3),
-                 &g_model->GetVertices()[0], GL_STATIC_DRAW);
-
-    glGenBuffers(1, &g_uvCoordBufferId);
-    glBindBuffer(GL_ARRAY_BUFFER, g_uvCoordBufferId);
-    glBufferData(GL_ARRAY_BUFFER,
-                 g_model->GetUvCoords().size() * sizeof(glm::vec2),
-                 &g_model->GetUvCoords()[0], GL_STATIC_DRAW);
-
-    glGenBuffers(1, &g_normalBufferId);
-    glBindBuffer(GL_ARRAY_BUFFER, g_normalBufferId);
-    glBufferData(GL_ARRAY_BUFFER,
-                 g_model->GetNormals().size() * sizeof(glm::vec3),
-                 &g_model->GetNormals()[0], GL_STATIC_DRAW);
-
-    std::vector<unsigned short> indices;
-
-    glGenBuffers(1, &g_elementBufferId);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_elementBufferId);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                 indices.size() * sizeof(unsigned short), &indices[0],
-                 GL_STATIC_DRAW);
-
-    LoadShaders("../res/shaders/vertex.glsl", "../res/shaders/fragment.glsl");
-    g_mvpMatrixId = glGetUniformLocation(g_programId, "mvpMatrix");
-    g_modelMatrixId = glGetUniformLocation(g_programId, "modelMatris");
-    g_viewMatrixId = glGetUniformLocation(g_programId, "modelMatrix");
-
-    g_textureId = LoadDDS("../res/textures/uvmap.DDS");
-    g_uniformTextureId = glGetUniformLocation(g_programId, "myTextureSampler");
-
-    glUseProgram(g_programId);
-    g_lightPositionId =
-        glGetUniformLocation(g_programId, "lightPosition_worldspace");
-    g_lightColorId = glGetUniformLocation(g_programId, "lightColor");
-    g_lightPowerId = glGetUniformLocation(g_programId, "lightPower");
+    return window;
 }
 
 static void CleanupOpenGL()
 {
-    glDeleteProgram(g_programId);
-    glDeleteBuffers(1, &g_normalBufferId);
-    glDeleteBuffers(1, &g_uvCoordBufferId);
-    glDeleteBuffers(1, &g_vertexBufferId);
     glDeleteVertexArrays(1, &g_vertexArrayId);
     glfwTerminate();
 }
 
-static void LoadShaders(const std::string &vertexShaderFile,
-                        const std::string &fragmentShaderFile)
+static std::unique_ptr<Program>
+LoadShaders(const std::string &vertexShaderFile,
+            const std::string &fragmentShaderFile)
 {
-    g_programId = glCreateProgram();
-    GLuint vsId = glCreateShader(GL_VERTEX_SHADER);
-    GLuint fsId = glCreateShader(GL_FRAGMENT_SHADER);
-    GLint result = GL_FALSE;
-    GLint infoLogLength;
+    auto shaders = std::vector<std::shared_ptr<Shader>>{};
 
-    CompileShader(vsId, vertexShaderFile);
-    CompileShader(fsId, fragmentShaderFile);
-    glAttachShader(g_programId, vsId);
-    glAttachShader(g_programId, fsId);
-    glLinkProgram(g_programId);
-    glGetProgramiv(g_programId, GL_LINK_STATUS, &result);
-    glGetProgramiv(g_programId, GL_INFO_LOG_LENGTH, &infoLogLength);
+    shaders.push_back(
+        std::make_shared<Shader>(VERTEX_SHADER, vertexShaderFile));
+    shaders.push_back(
+        std::make_shared<Shader>(FRAGMENT_SHADER, fragmentShaderFile));
 
-    std::vector<char> infoLog(
-        static_cast<std::vector<char>::size_type>(infoLogLength));
+    auto shaderProgram = std::unique_ptr<Program>{new Program{shaders}};
 
-    glGetProgramInfoLog(g_programId, infoLogLength, nullptr, &infoLog[0]);
-    std::cerr << &infoLog[0] << std::endl;
-    glDeleteShader(vsId);
-    glDeleteShader(fsId);
-}
-
-static void CompileShader(GLuint shaderId, const std::string sourceFile)
-{
-    std::string shaderSrc;
-    std::ifstream file{sourceFile};
-
-    if (file.is_open()) {
-        std::string ln;
-
-        while (std::getline(file, ln))
-            shaderSrc += "\n" + ln;
-    } else {
-        std::cerr << "Warning: failed to open vertex shader source file."
-                  << std::endl;
-        exit(1);
+    if (!shaderProgram->Link()) {
+        return std::unique_ptr<Program>{};
     }
-
-    GLint result = GL_FALSE;
-    GLint infoLogLength;
-    char const *shaderSrcPtr = shaderSrc.c_str();
-
-    glShaderSource(shaderId, 1, &shaderSrcPtr, nullptr);
-    glCompileShader(shaderId);
-    glGetShaderiv(shaderId, GL_COMPILE_STATUS, &result);
-    glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &infoLogLength);
-
-    std::vector<char> infoLog(
-        static_cast<std::vector<char>::size_type>(infoLogLength));
-
-    glGetShaderInfoLog(shaderId, infoLogLength, nullptr, &infoLog[0]);
-    std::cerr << &infoLog[0] << std::endl;
+    return shaderProgram;
 }
 
-static void ProcessInputs()
+static void ProcessInputs(GLFWwindow *window, Player *player)
 {
     static double lastTime = glfwGetTime();
     double now = glfwGetTime();
@@ -402,7 +323,7 @@ static void ProcessInputs()
     double xPos, yPos;
 
     lastTime = now;
-    glfwGetCursorPos(g_window, &xPos, &yPos);
+    glfwGetCursorPos(window, &xPos, &yPos);
 
     // TODO: glfwGetWindowSize
     horizontalAngle = static_cast<float>(xPos) * MOUSE_SPEED * -1.0f;
@@ -413,26 +334,26 @@ static void ProcessInputs()
 
     std::clog << "Direction: (" << dir.x << ", " << dir.y << ", " << dir.z
               << ")" << std::endl;
-    g_player->SetDirection(dir);
-    g_player->SetRight(glm::vec3{sin(horizontalAngle - M_PI / 2), 0,
-                                 cos(horizontalAngle - M_PI / 2)});
-    g_player->SetUp(glm::cross(g_player->GetRight(), g_player->GetDirection()));
+    player->SetDirection(dir);
+    player->SetRight(glm::vec3{sin(horizontalAngle - M_PI / 2), 0,
+                               cos(horizontalAngle - M_PI / 2)});
+    player->SetUp(glm::cross(player->GetRight(), player->GetDirection()));
 
-    if (glfwGetKey(g_window, GLFW_KEY_UP) == GLFW_PRESS) {
-        g_player->SetPosition(g_player->GetPosition() +
-                              g_player->GetDirection() * deltaTime * SPEED);
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+        player->SetPosition(player->GetPosition() +
+                            player->GetDirection() * deltaTime * SPEED);
     }
-    if (glfwGetKey(g_window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-        g_player->SetPosition(g_player->GetPosition() -
-                              g_player->GetDirection() * deltaTime * SPEED);
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        player->SetPosition(player->GetPosition() -
+                            player->GetDirection() * deltaTime * SPEED);
     }
-    if (glfwGetKey(g_window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-        g_player->SetPosition(g_player->GetPosition() +
-                              g_player->GetRight() * deltaTime * SPEED);
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+        player->SetPosition(player->GetPosition() +
+                            player->GetRight() * deltaTime * SPEED);
     }
-    if (glfwGetKey(g_window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-        g_player->SetPosition(g_player->GetPosition() -
-                              g_player->GetRight() * deltaTime * SPEED);
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+        player->SetPosition(player->GetPosition() -
+                            player->GetRight() * deltaTime * SPEED);
     }
 }
 

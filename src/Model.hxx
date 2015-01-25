@@ -1,22 +1,20 @@
 #pragma once
 
-#include <glm/glm.hpp>
-
-#include <vector>
+#include "Material.hxx"
+#include "Mesh.hxx"
 
 class Model
 {
   public:
-    Model();
-    Model(std::vector<glm::vec3> &vertices, std::vector<glm::vec2> &uvCoords,
-          std::vector<glm::vec3> &normals);
+    Model(const std::shared_ptr<Material> &material,
+          const std::shared_ptr<Mesh> &mesh);
 
-    std::vector<glm::vec3> &GetVertices();
-    std::vector<glm::vec2> &GetUvCoords();
-    std::vector<glm::vec3> &GetNormals();
+    void Draw() const;
+
+    const Material &GetMaterial() const;
+    const Mesh &GetMesh() const;
 
   private:
-    std::vector<glm::vec3> m_vertices;
-    std::vector<glm::vec2> m_uvCoords;
-    std::vector<glm::vec3> m_normals;
+    std::shared_ptr<Material> m_material;
+    std::shared_ptr<Mesh> m_mesh;
 };

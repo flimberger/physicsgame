@@ -23,17 +23,19 @@ set(physgame_LIBS
     ${GLFW_STATIC_LIBRARIES}
 )
 
+set(physgame_GFX_SRCS
+    LoadDDS.cxx
+    LoadObj.cxx
+    Material.cxx
+    Mesh.cxx
+    Model.cxx
+    Program.cxx
+    Shader.cxx
+    Texture.cxx)
+
 set(physgame_SRCS
     physgame.cxx
-    LoadDDS.cxx
-    Model.cxx
-    LoadObj.cxx
-)
-
-set(physgame_HDRS
-    LoadDDS.hxx
-    Model.hxx
-    LoadObj.hxx
+    ${physgame_GFX_SRCS}
 )
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
