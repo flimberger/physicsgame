@@ -33,10 +33,15 @@ struct Player
 {
     Player();
 
-    glm::vec3 &GetPosition();
-    glm::vec3 &GetDirection();
-    glm::vec3 &GetRight();
-    glm::vec3 &GetUp();
+    const glm::vec3 &GetPosition() const;
+    const glm::vec3 &GetDirection() const;
+    const glm::vec3 &GetRight() const;
+    const glm::vec3 &GetUp() const;
+
+    void SetPosition(const glm::vec3 &newPosition);
+    void SetDirection(const glm::vec3 &newDirection);
+    void SetRight(const glm::vec3 &newRight);
+    void SetUp(const glm::vec3 &newUp);
 
   private:
     glm::vec3 m_position;
@@ -48,13 +53,27 @@ struct Player
 
 Player::Player() : m_position{3, 1, 9} {}
 
-glm::vec3 &Player::GetPosition() { return m_position; }
+const glm::vec3 &Player::GetPosition() const { return m_position; }
 
-glm::vec3 &Player::GetDirection() { return m_direction; }
+const glm::vec3 &Player::GetDirection() const { return m_direction; }
 
-glm::vec3 &Player::GetRight() { return m_right; }
+const glm::vec3 &Player::GetRight() const { return m_right; }
 
-glm::vec3 &Player::GetUp() { return m_up; }
+const glm::vec3 &Player::GetUp() const { return m_up; }
+
+void Player::SetPosition(const glm::vec3 &newPosition)
+{
+    m_position = newPosition;
+}
+
+void Player::SetDirection(const glm::vec3 &newDirection)
+{
+    m_direction = newDirection;
+}
+
+void Player::SetRight(const glm::vec3 &newRight) { m_right = newRight; }
+
+void Player::SetUp(const glm::vec3 &newUp) { m_up = newUp; }
 
 static Player *g_player;
 static Model *g_model;
@@ -73,8 +92,6 @@ static GLint g_mvpMatrixId;
 static GLint g_modelMatrixId;
 static GLint g_viewMatrixId;
 static GLFWwindow *g_window;
-static float g_horizontalAngle{3.14f};
-static float g_verticalAngle{0.0f};
 
 static const float SPEED{5.0f};
 static const float MOUSE_SPEED{0.02f};
@@ -256,7 +273,7 @@ void SetupOpenGL()
         exit(1);
     }
     glfwSetInputMode(g_window, GLFW_STICKY_KEYS, GL_TRUE);
-    glfwSetCursorPos(g_window, 1024 / 2, 768 / 2);
+    glfwSetInputMode(g_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
     glEnable(GL_DEPTH_TEST);
@@ -379,44 +396,56 @@ static void ProcessInputs()
 {
     static double lastTime = glfwGetTime();
     double now = glfwGetTime();
+    float horizontalAngle;
+    float verticalAngle;
     float deltaTime = float(now - lastTime);
     double xPos, yPos;
 
     lastTime = now;
     glfwGetCursorPos(g_window, &xPos, &yPos);
+
     // TODO: glfwGetWindowSize
-    glfwSetCursorPos(g_window, 1024 / 2, 768 / 2);
-    g_horizontalAngle += MOUSE_SPEED * deltaTime * float(1024 / 2 - xPos);
-    g_verticalAngle += MOUSE_SPEED * deltaTime * float(768 / 2 - yPos);
+    horizontalAngle = static_cast<float>(xPos) * MOUSE_SPEED * -1.0f;
+    verticalAngle = static_cast<float>(yPos) * MOUSE_SPEED * -1.0f;
 
-    g_player->GetDirection() = {cos(g_verticalAngle) * sin(g_horizontalAngle),
-                                sin(g_verticalAngle),
-                                cos(g_verticalAngle) * cos(g_horizontalAngle)};
-    g_player->GetRight() = glm::vec3{sin(g_horizontalAngle - M_PI / 2), 0,
-                                     cos(g_horizontalAngle - M_PI / 2)};
-    g_player->GetUp() =
-        glm::cross(g_player->GetRight(), g_player->GetDirection());
+    glm::vec3 dir{cos(verticalAngle) * sin(horizontalAngle), sin(verticalAngle),
+                  cos(verticalAngle) * cos(horizontalAngle)};
 
-    if (glfwGetKey(g_window, GLFW_KEY_UP) == GLFW_PRESS)
-        g_player->GetPosition() += g_player->GetDirection() * deltaTime * SPEED;
-    if (glfwGetKey(g_window, GLFW_KEY_DOWN) == GLFW_PRESS)
-        g_player->GetPosition() -= g_player->GetDirection() * deltaTime * SPEED;
-    if (glfwGetKey(g_window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-        g_player->GetPosition() += g_player->GetRight() * deltaTime * SPEED;
-    if (glfwGetKey(g_window, GLFW_KEY_LEFT) == GLFW_PRESS)
-        g_player->GetPosition() -= g_player->GetRight() * deltaTime * SPEED;
+    std::clog << "Direction: (" << dir.x << ", " << dir.y << ", " << dir.z
+              << ")" << std::endl;
+    g_player->SetDirection(dir);
+    g_player->SetRight(glm::vec3{sin(horizontalAngle - M_PI / 2), 0,
+                                 cos(horizontalAngle - M_PI / 2)});
+    g_player->SetUp(glm::cross(g_player->GetRight(), g_player->GetDirection()));
+
+    if (glfwGetKey(g_window, GLFW_KEY_UP) == GLFW_PRESS) {
+        g_player->SetPosition(g_player->GetPosition() +
+                              g_player->GetDirection() * deltaTime * SPEED);
+    }
+    if (glfwGetKey(g_window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        g_player->SetPosition(g_player->GetPosition() -
+                              g_player->GetDirection() * deltaTime * SPEED);
+    }
+    if (glfwGetKey(g_window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+        g_player->SetPosition(g_player->GetPosition() +
+                              g_player->GetRight() * deltaTime * SPEED);
+    }
+    if (glfwGetKey(g_window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+        g_player->SetPosition(g_player->GetPosition() -
+                              g_player->GetRight() * deltaTime * SPEED);
+    }
 }
 
 static void ShowStatus(double boxHeight, double fps)
 {
-    static bool firstRun = true;
+    // static bool firstRun = true;
 
-    if (firstRun) {
-        firstRun = false;
-    } else {
-        std::cout << "\x1b[2A"; // two lines up
-        std::cout << "\x1b[J"; // erase line
-    }
+    // if (firstRun) {
+    //     firstRun = false;
+    // } else {
+    //     std::cout << "\x1b[2A"; // two lines up
+    //     std::cout << "\x1b[J";  // erase line
+    // }
     std::cout << "Box height: " << boxHeight << std::endl << fps << " ms/Frame"
               << std::endl;
 }
