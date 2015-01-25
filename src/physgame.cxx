@@ -6,19 +6,7 @@
 #include "Gfx/Program.hxx"
 #include "Gfx/Shader.hxx"
 #include "Gfx/Window.hxx"
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#pragma clang diagnostic ignored "-Wextra-semi"
-#pragma clang diagnostic ignored "-Wfloat-equal"
-#pragma clang diagnostic ignored "-Wdocumentation"
-#pragma clang diagnostic ignored "-Wsign-conversion"
-#pragma clang diagnostic ignored "-Woverloaded-virtual"
-#pragma clang diagnostic ignored "-Wcast-align"
-#pragma clang diagnostic ignored "-Wunused-parameter"
-#pragma clang diagnostic ignored "-Wweak-vtables"
-#include <btBulletDynamicsCommon.h>
-#pragma clang diagnostic pop
+#include "Physics/PhysicsWorld.hxx"
 
 #include <iostream>
 #include <fstream>
@@ -76,18 +64,8 @@ int main()
         std::shared_ptr<Material>{new Material{shaderProgram, texture}};
     auto model = std::unique_ptr<Model>{new Model{material, mesh}};
 
-    std::unique_ptr<btBroadphaseInterface> broadphase{new btDbvtBroadphase};
-    std::unique_ptr<btDefaultCollisionConfiguration> collisionConfiguration{
-        new btDefaultCollisionConfiguration};
-    std::unique_ptr<btCollisionDispatcher> dispatcher{
-        new btCollisionDispatcher{collisionConfiguration.get()}};
-    std::unique_ptr<btSequentialImpulseConstraintSolver> solver{
-        new btSequentialImpulseConstraintSolver};
-    std::unique_ptr<btDiscreteDynamicsWorld> dynamicsWorld{
-        new btDiscreteDynamicsWorld{dispatcher.get(), broadphase.get(),
-                                    solver.get(),
-                                    collisionConfiguration.get()}};
-    dynamicsWorld->setGravity(btVector3{0, -10, 0});
+    PhysicsWorld physicsWorld{btVector3{0, -10, 0}};
+
     std::unique_ptr<btCollisionShape> groundShape{
         new btStaticPlaneShape{btVector3{0, 1, 0}, 1}};
     std::unique_ptr<btSphereShape> fallShape{new btSphereShape{1}};
@@ -98,6 +76,8 @@ int main()
         0, groundMotionState.get(), groundShape.get(), btVector3{0, 0, 0}};
     std::unique_ptr<btRigidBody> groundRigidBody{
         new btRigidBody{groundRigidBodyConstructionInfo}};
+
+    auto dynamicsWorld = physicsWorld.GetDynamicsWorld();
 
     dynamicsWorld->addRigidBody(groundRigidBody.get());
 

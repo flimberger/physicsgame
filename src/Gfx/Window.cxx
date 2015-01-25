@@ -85,10 +85,7 @@ bool Window::IsLooping() const
            glfwWindowShouldClose(m_glfwWindow) == 0;
 }
 
-double Window::GetFps() const
-{
-    return m_currentFps;
-}
+double Window::GetFps() const { return m_currentFps; }
 
 void Window::ProcessInputs()
 {

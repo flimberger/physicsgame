@@ -34,10 +34,13 @@ set(physgame_GFX_SRCS
     Gfx/Texture.cxx
     Gfx/Window.cxx)
 
+set(physgame_PHYSICS_SRCS
+    Physics/PhysicsWorld.cxx)
+
 set(physgame_SRCS
     physgame.cxx
     ${physgame_GFX_SRCS}
-)
+    ${physgame_PHYSICS_SRCS})
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 
