@@ -24,14 +24,14 @@ set(physgame_LIBS
 )
 
 set(physgame_GFX_SRCS
-    LoadDDS.cxx
-    LoadObj.cxx
-    Material.cxx
-    Mesh.cxx
-    Model.cxx
-    Program.cxx
-    Shader.cxx
-    Texture.cxx)
+    Gfx/LoadDDS.cxx
+    Gfx/LoadObj.cxx
+    Gfx/Material.cxx
+    Gfx/Mesh.cxx
+    Gfx/Model.cxx
+    Gfx/Program.cxx
+    Gfx/Shader.cxx
+    Gfx/Texture.cxx)
 
 set(physgame_SRCS
     physgame.cxx

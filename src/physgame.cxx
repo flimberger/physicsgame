@@ -1,10 +1,10 @@
-#include "LoadDDS.hxx"
-#include "LoadObj.hxx"
-#include "Material.hxx"
-#include "Mesh.hxx"
-#include "Model.hxx"
-#include "Program.hxx"
-#include "Shader.hxx"
+#include "Gfx/LoadDDS.hxx"
+#include "Gfx/LoadObj.hxx"
+#include "Gfx/Material.hxx"
+#include "Gfx/Mesh.hxx"
+#include "Gfx/Model.hxx"
+#include "Gfx/Program.hxx"
+#include "Gfx/Shader.hxx"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wold-style-cast"
