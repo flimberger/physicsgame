@@ -31,7 +31,8 @@ set(physgame_GFX_SRCS
     Gfx/Model.cxx
     Gfx/Program.cxx
     Gfx/Shader.cxx
-    Gfx/Texture.cxx)
+    Gfx/Texture.cxx
+    Gfx/Window.cxx)
 
 set(physgame_SRCS
     physgame.cxx
