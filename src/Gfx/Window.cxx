@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+Viewport::Viewport() : position{}, direction{}, right{}, up{} {}
+
 Window::Window(float mouseSpeed, float movementSpeed)
     : m_glfwWindow{nullptr}, m_numberOfFrames{0}, m_lastLoopTime{glfwGetTime()},
       m_currentFps{0}, m_mouseSpeed{mouseSpeed}, m_movementSpeed{movementSpeed},
