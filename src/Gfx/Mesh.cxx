@@ -6,6 +6,9 @@ Mesh::Mesh(std::vector<glm::vec3> &vertices, std::vector<glm::vec2> &uvCoords,
       /*m_elementBufferId{0},*/ m_normalBufferId{0}, m_uvcBufferId{0},
       m_vertexBufferId{0}
 {
+    glGenVertexArrays(1, &m_vertexArrayId);
+    glBindVertexArray(m_vertexArrayId);
+
     glGenBuffers(1, &m_vertexBufferId);
     glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferId);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3),
@@ -34,6 +37,7 @@ Mesh::~Mesh()
 {
     glDeleteBuffers(1, &m_normalBufferId);
     glDeleteBuffers(1, &m_uvcBufferId);
+    glDeleteVertexArrays(1, &m_vertexArrayId);
     glDeleteBuffers(1, &m_vertexBufferId);
 }
 

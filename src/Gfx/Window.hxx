@@ -41,7 +41,6 @@ struct Window
     std::size_t m_numberOfFrames;
     double m_lastLoopTime;
     double m_currentFps;
-    GLuint m_vertexArrayId;
     const float m_mouseSpeed;
     const float m_movementSpeed;
     bool m_glfwInitialized;

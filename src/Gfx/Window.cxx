@@ -14,7 +14,6 @@ Window::Window(float mouseSpeed, float movementSpeed)
 Window::~Window()
 {
     if (m_glfwInitialized) {
-        glDeleteVertexArrays(1, &m_vertexArrayId);
         glfwTerminate();
     }
 }
@@ -70,8 +69,6 @@ bool Window::Init()
     }
     glfwSetInputMode(m_glfwWindow, GLFW_STICKY_KEYS, GL_TRUE);
     glfwSetInputMode(m_glfwWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glGenVertexArrays(1, &m_vertexArrayId);
-    glBindVertexArray(m_vertexArrayId);
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);

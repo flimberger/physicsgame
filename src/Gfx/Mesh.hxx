@@ -22,5 +22,6 @@ struct Mesh
     // GLuint m_elementBufferId;
     GLuint m_normalBufferId;
     GLuint m_uvcBufferId;
+    GLuint m_vertexArrayId;
     GLuint m_vertexBufferId;
 };
